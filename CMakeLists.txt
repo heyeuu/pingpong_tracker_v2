@@ -12,3 +12,6 @@ add_executable(
     ${PROJECT_NAME}_runtime
     ${PROJECT_SOURCE_DIR}/src/runtime.cpp
 )
+
+enable_testing()
+add_subdirectory(tests)
