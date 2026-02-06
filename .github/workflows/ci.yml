@@ -21,14 +21,23 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake build-essential gcc-14 g++-14 \
-        libyaml-cpp-dev
+        libyaml-cpp-dev pkg-config
+
+    # 关键调试步骤：确定 yaml-cpp 配置文件到底在哪个路径
+    - name: Locate yaml-cpp Config
+      id: locate-yaml
+      run: |
+        YAML_PATH=$(dpkg -L libyaml-cpp-dev | grep -i 'yaml-cpp-config.cmake\|yaml-cppConfig.cmake' | head -n 1 | xargs dirname)
+        echo "YAML_CPP_DIR=$YAML_PATH" >> $GITHUB_ENV
+        echo "找到 yaml-cpp 路径: $YAML_PATH"
 
     - name: Configure CMake
-      run: >
-        cmake -S . -B build 
-        -DCMAKE_BUILD_TYPE=Release 
-        -DCMAKE_C_COMPILER=gcc-14 
-        -DCMAKE_CXX_COMPILER=g++-14
+      run: |
+        cmake -S . -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_COMPILER=gcc-14 \
+        -DCMAKE_CXX_COMPILER=g++-14 \
+        -Dyaml-cpp_DIR=${{ env.YAML_CPP_DIR }}
 
     - name: Build
       run: cmake --build build --parallel
