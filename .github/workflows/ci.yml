@@ -20,7 +20,8 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake build-essential libyaml-cpp-dev
+        sudo apt-get install -y cmake build-essential gcc-14 g++-14 \
+        libyaml-cpp-dev
 
     - name: Configure CMake
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
