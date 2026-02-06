@@ -19,6 +19,12 @@ FetchContent_MakeAvailable(googletest)
 
 ## 依赖查找
 find_package(yaml-cpp REQUIRED)
+if(NOT yaml-cpp_FOUND)
+    find_package(YAML-CPP REQUIRED)
+endif()
+
+# 打印一下路径，方便在 CI 日志里调试
+message(STATUS "yaml-cpp found at: ${yaml-cpp_DIR}")
 
 ## 目录包含
 include_directories(
