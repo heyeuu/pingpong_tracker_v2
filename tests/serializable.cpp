@@ -15,7 +15,14 @@ struct T : Serializable {
   std::vector<double> mem4{};
 
   static constexpr std::tuple metas{
-      &T::mem1, "mem1", &T::mem2, "mem2", &T::mem3, "mem3", &T::mem4, "mem4",
+    &T::mem1, 
+    "mem1",
+    &T::mem2,
+    "mem2", 
+    &T::mem3, 
+    "mem3", 
+    &T::mem4, 
+    "mem4",
   };
 };
 
@@ -30,9 +37,6 @@ TEST(serializable, node_adapter) {
   auto ret2 = yaml_adapter.get_param("", param);
 }
 
-// @NOTE:
-//  只引入 yaml-cpp/node/node.h 会找不到链接符号
-//  哭（
 TEST(serializable, yaml_cpp) {
   using namespace rmcs::util;
 
