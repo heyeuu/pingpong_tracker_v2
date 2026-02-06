@@ -17,11 +17,30 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+## 依赖查找
+find_package(yaml-cpp REQUIRED)
+
+## 目录包含
+include_directories(
+    ${PROJECT_SOURCE_DIR}/src/
+)
+
+## 代码资源搜索
+file(GLOB_RECURSE PINGPONG_TRACKER_MODULE
+    CONFIGURE_DEPENDS
+    ${PROJECT_SOURCE_DIR}/src/module/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/module/*.cc
+    ${PROJECT_SOURCE_DIR}/src/utility/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/utility/*.cc
+)
+
 ## 运行时构建: runtime
 add_executable(
     ${PROJECT_NAME}_runtime
     ${PROJECT_SOURCE_DIR}/src/runtime.cpp
+    ${PINGPONG_TRACKER_MODULE} 
 )
+
 
 enable_testing()
 add_subdirectory(tests)

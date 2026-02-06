@@ -1,8 +1,15 @@
-add_executable(
-    ${PROJECT_NAME}_test
-    test_main.cpp
-)
-target_link_libraries(${PROJECT_NAME}_test GTest::gtest_main)
-
 include(GoogleTest)
-gtest_discover_tests(${PROJECT_NAME}_test)
+
+# Serializable
+add_executable(
+    test_serializable
+    serializable.cpp
+)
+target_link_libraries(
+    test_serializable
+    GTest::gtest_main
+    GTest::gtest
+    yaml-cpp
+)
+configure_file(serializable.yaml ${CMAKE_CURRENT_BINARY_DIR}/serializable.yaml COPYONLY)
+gtest_discover_tests(test_serializable)

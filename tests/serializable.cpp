@@ -1,0 +1,61 @@
+#include "utility/serializable.hpp"
+
+#include <yaml-cpp/yaml.h>
+
+#include <filesystem>
+#include <gtest/gtest.h>
+
+using namespace rmcs::util;
+
+static_assert(details::yaml_cpp_trait<YAML::Node>, " ");
+
+constexpr auto kFilePath = __FILE__;
+
+struct T : Serializable {
+  int mem1;
+  std::string mem2;
+  double mem3;
+  std::vector<double> mem4;
+
+  static constexpr std::tuple metas{
+      &T::mem1, "mem1", &T::mem2, "mem2", &T::mem3, "mem3", &T::mem4, "mem4",
+  };
+};
+
+TEST(serializable, node_adapter) {
+  auto param = std::string{};
+
+  static_assert(details::yaml_cpp_trait<YAML::Node>, " ");
+
+  auto yaml_node = YAML::Node{};
+  auto yaml_adapter = details::NodeAdapter<YAML::Node>{yaml_node};
+
+  auto ret2 = yaml_adapter.get_param("", param);
+}
+
+// @NOTE:
+//  只引入 yaml-cpp/node/node.h 会找不到链接符号
+//  哭（
+TEST(serializable, yaml_cpp) {
+  using namespace rmcs::util;
+
+  const auto current_file = std::filesystem::path(kFilePath);
+  const auto current_path = current_file.parent_path();
+  const auto yaml_path = current_path / "serializable.yaml";
+
+  auto yaml_root = YAML::LoadFile(yaml_path.string());
+  auto yaml_node = yaml_root["serializable"]["ros__parameters"]["test"];
+
+  ASSERT_TRUE(yaml_node.IsMap());
+
+  auto t = T{};
+  auto adapter = details::NodeAdapter<YAML::Node>{yaml_node};
+
+  auto ret = t.serialize("", adapter);
+  if (!ret.has_value()) {
+    std::cerr << "YAML Error: " << ret.error() << "\n";
+    GTEST_FAIL();
+  }
+
+  std::cout << "YAML Print Data:\n" << t.printable();
+}
