@@ -29,8 +29,6 @@ struct T : Serializable {
 TEST(serializable, node_adapter) {
   auto param = std::string{};
 
-  static_assert(details::yaml_cpp_trait<YAML::Node>, " ");
-
   auto yaml_node = YAML::Node{};
   auto yaml_adapter = details::NodeAdapter<YAML::Node>{yaml_node};
 
@@ -40,8 +38,6 @@ TEST(serializable, node_adapter) {
 }
 
 TEST(serializable, yaml_cpp) {
-  using namespace rmcs::util;
-
   auto yaml_root = YAML::LoadFile("serializable.yaml");
   auto yaml_node = yaml_root["serializable"]["ros__parameters"]["test"];
 

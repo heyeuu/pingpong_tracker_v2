@@ -13,5 +13,5 @@ Checks: >
   -readability-identifier-length,
   -bugprone-easily-swappable-parameters
 
-WarningsAsErrors: ''
+WarningsAsErrors: 'bugprone-*'
 HeaderFilterRegex: 'src/.*'

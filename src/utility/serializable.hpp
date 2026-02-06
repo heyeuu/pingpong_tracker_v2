@@ -5,6 +5,10 @@
 #include <expected>
 #include <format>
 #include <string>
+#include <string_view>
+#include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace rmcs::util {
 
@@ -37,9 +41,14 @@ namespace details {
         auto get_param(const std::string& name, T& target) noexcept
             -> std::expected<void, std::string> {
             try {
-                if (!node[name]) {
+                if (!node[name].IsDefined()) {
                     return std::unexpected {
                         std::format("Missing key '{}'", name),
+                    };
+                }
+                if (node[name].IsNull()) {
+                    return std::unexpected {
+                        std::format("Key '{}' is null", name),
                     };
                 }
                 target = node[name].template as<T>();
@@ -125,7 +134,7 @@ namespace details {
         }
     };
 
-}
+} // namespace details
 
 struct Serializable {
     template <typename Metas, std::size_t... Idx>
@@ -164,4 +173,4 @@ struct Serializable {
     }
 };
 
-}
+} // namespace rmcs::util

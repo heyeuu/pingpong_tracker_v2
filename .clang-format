@@ -23,7 +23,7 @@ BreakTemplateDeclarations: true
 ColumnLimit: 100
 
 # 是否允许短的函数，语句块等单独一行
-AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortIfStatementsOnASingleLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: All
 
