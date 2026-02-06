@@ -1,5 +1,5 @@
 Language: Cpp
- 
+
 BasedOnStyle: WebKit
 
 # 使用空格而不是 Tab
