@@ -1,10 +1,5 @@
 include(GoogleTest)
 
-if(NOT yaml-cpp_FOUND)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(YAML_CPP REQUIRED yaml-cpp)
-endif()
-
 # Serializable
 add_executable(
     test_serializable
