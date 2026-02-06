@@ -45,10 +45,15 @@ TEST(serializable, yaml_cpp) {
   auto adapter = details::NodeAdapter<YAML::Node>{yaml_node};
 
   auto ret = t.serialize("", adapter);
-  if (!ret.has_value()) {
-    std::cerr << "YAML Error: " << ret.error() << "\n";
-    GTEST_FAIL();
-  }
+  ASSERT_TRUE(ret.has_value()) << "YAML Error: " << ret.error();
 
   std::cout << "YAML Print Data:\n" << t.printable();
+
+  EXPECT_EQ(t.mem1, 23332);
+  EXPECT_EQ(t.mem2, "this is a string");
+  EXPECT_DOUBLE_EQ(t.mem3, 1.234);
+  ASSERT_EQ(t.mem4.size(), 3);
+  EXPECT_DOUBLE_EQ(t.mem4[0], 1.0);
+  EXPECT_DOUBLE_EQ(t.mem4[1], 2.0);
+  EXPECT_DOUBLE_EQ(t.mem4[2], 3.0);
 }
