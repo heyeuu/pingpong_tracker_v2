@@ -12,10 +12,10 @@ static_assert(details::yaml_cpp_trait<YAML::Node>, " ");
 constexpr auto kFilePath = __FILE__;
 
 struct T : Serializable {
-  int mem1;
-  std::string mem2;
-  double mem3;
-  std::vector<double> mem4;
+  int mem1 = 0;
+  std::string mem2{};
+  double mem3 = 0.0;
+  std::vector<double> mem4{};
 
   static constexpr std::tuple metas{
       &T::mem1, "mem1", &T::mem2, "mem2", &T::mem3, "mem3", &T::mem4, "mem4",

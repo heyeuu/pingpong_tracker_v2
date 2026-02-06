@@ -21,15 +21,11 @@ FetchContent_MakeAvailable(googletest)
 FetchContent_Declare(
   yaml-cpp
   URL https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(yaml-cpp)
-
-## 目录包含
-include_directories(
-    ${PROJECT_SOURCE_DIR}/src/
-)
 
 ## 代码资源搜索
 file(GLOB_RECURSE PINGPONG_TRACKER_MODULE
@@ -45,6 +41,9 @@ add_executable(
     ${PROJECT_NAME}_runtime
     ${PROJECT_SOURCE_DIR}/src/runtime.cpp
     ${PINGPONG_TRACKER_MODULE} 
+)
+target_include_directories(${PROJECT_NAME}_runtime PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
 )
 
 
