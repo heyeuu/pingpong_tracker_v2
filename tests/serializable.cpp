@@ -2,6 +2,7 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <vector>
 #include <gtest/gtest.h>
 
 using namespace rmcs::util;
@@ -35,6 +36,41 @@ TEST(serializable, node_adapter) {
   auto ret2 = yaml_adapter.get_param("", param);
   ASSERT_FALSE(ret2.has_value()) << "Expected error for missing key on empty node";
   ASSERT_TRUE(param.empty());
+}
+
+TEST(serializable, node_adapter_type_mismatch) {
+  std::vector<double> vec;
+
+  // Case 1: Scalar instead of sequence (Container-level failure)
+  {
+    auto node = YAML::Node{};
+    node["vec"] = 123;
+    auto adapter = details::NodeAdapter<YAML::Node>{node};
+    auto ret = adapter.get_param("vec", vec);
+    ASSERT_FALSE(ret.has_value());
+    EXPECT_NE(ret.error().find("Type mismatch"), std::string::npos) << "Error: " << ret.error();
+  }
+
+  // Case 2: Sequence with wrong element type (Element-level failure)
+  {
+    auto node = YAML::Node{};
+    node["vec"].push_back(1.0);
+    node["vec"].push_back("not_a_number");
+    auto adapter = details::NodeAdapter<YAML::Node>{node};
+    auto ret = adapter.get_param("vec", vec);
+    ASSERT_FALSE(ret.has_value());
+    EXPECT_NE(ret.error().find("Type mismatch"), std::string::npos) << "Error: " << ret.error();
+  }
+
+  // Case 3: Null node
+  {
+    auto node = YAML::Node{};
+    node["vec"] = YAML::Null;
+    auto adapter = details::NodeAdapter<YAML::Node>{node};
+    auto ret = adapter.get_param("vec", vec);
+    ASSERT_FALSE(ret.has_value());
+    EXPECT_EQ(ret.error(), "Key 'vec' is null");
+  }
 }
 
 TEST(serializable, yaml_cpp) {

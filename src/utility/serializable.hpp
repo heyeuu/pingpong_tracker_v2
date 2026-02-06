@@ -41,18 +41,19 @@ namespace details {
         auto get_param(const std::string& name, T& target) noexcept
             -> std::expected<void, std::string> {
             try {
-                if (!node[name].IsDefined()) {
+                auto child = node[name];
+                if (!child.IsDefined()) {
                     return std::unexpected {
                         std::format("Missing key '{}'", name),
                     };
                 }
-                if (node[name].IsNull()) {
+                if (child.IsNull()) {
                     return std::unexpected {
                         std::format("Key '{}' is null", name),
                     };
                 }
-                target = node[name].template as<T>();
-            } catch (const YAML::TypedBadConversion<T>& e) {
+                target = child.template as<T>();
+            } catch (const YAML::BadConversion& e) {
                 return std::unexpected {
                     std::format("Type mismatch for '{}': {}", name, e.what()),
                 };
