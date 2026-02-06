@@ -24,10 +24,11 @@ jobs:
         libyaml-cpp-dev
 
     - name: Configure CMake
-      env:
-        CC: gcc-14
-        CXX: g++-14
-      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      run: >
+        cmake -S . -B build 
+        -DCMAKE_BUILD_TYPE=Release 
+        -DCMAKE_C_COMPILER=gcc-14 
+        -DCMAKE_CXX_COMPILER=g++-14
 
     - name: Build
       run: cmake --build build --parallel
