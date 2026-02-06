@@ -9,11 +9,6 @@ namespace rmcs::util {
 
 using SerialResult = std::expected<void, std::string>;
 
-using integer_t = std::int64_t;
-using double_t  = double;
-using flag_t    = bool;
-using string_t  = std::string;
-
 namespace details {
 
     template <typename T>

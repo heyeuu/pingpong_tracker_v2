@@ -2,14 +2,11 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <filesystem>
 #include <gtest/gtest.h>
 
 using namespace rmcs::util;
 
 static_assert(details::yaml_cpp_trait<YAML::Node>, " ");
-
-constexpr auto kFilePath = __FILE__;
 
 struct T : Serializable {
   int mem1 = 0;
@@ -39,11 +36,7 @@ TEST(serializable, node_adapter) {
 TEST(serializable, yaml_cpp) {
   using namespace rmcs::util;
 
-  const auto current_file = std::filesystem::path(kFilePath);
-  const auto current_path = current_file.parent_path();
-  const auto yaml_path = current_path / "serializable.yaml";
-
-  auto yaml_root = YAML::LoadFile(yaml_path.string());
+  auto yaml_root = YAML::LoadFile("serializable.yaml");
   auto yaml_node = yaml_root["serializable"]["ros__parameters"]["test"];
 
   ASSERT_TRUE(yaml_node.IsMap());
