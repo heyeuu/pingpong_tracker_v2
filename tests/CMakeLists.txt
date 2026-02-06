@@ -8,7 +8,6 @@ add_executable(
 target_link_libraries(
     test_serializable
     GTest::gtest_main
-    GTest::gtest
     yaml-cpp
 )
 target_include_directories(test_serializable PRIVATE

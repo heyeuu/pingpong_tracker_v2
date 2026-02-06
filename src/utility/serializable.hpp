@@ -1,6 +1,7 @@
 #pragma once
 #include <yaml-cpp/exceptions.h>
 
+#include <concepts>
 #include <expected>
 #include <format>
 #include <string>
@@ -14,6 +15,8 @@ namespace details {
     template <typename T>
     concept yaml_cpp_trait = requires(T node) {
         { node.IsNull() } -> std::same_as<bool>;
+        { node[""] };
+        { node.template as<std::string>() } -> std::convertible_to<std::string>;
     };
 
     template <typename T>

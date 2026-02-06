@@ -35,6 +35,8 @@ TEST(serializable, node_adapter) {
   auto yaml_adapter = details::NodeAdapter<YAML::Node>{yaml_node};
 
   auto ret2 = yaml_adapter.get_param("", param);
+  ASSERT_FALSE(ret2.has_value()) << "Expected error for missing key on empty node";
+  ASSERT_TRUE(param.empty());
 }
 
 TEST(serializable, yaml_cpp) {
@@ -46,9 +48,7 @@ TEST(serializable, yaml_cpp) {
   ASSERT_TRUE(yaml_node.IsMap());
 
   auto t = T{};
-  auto adapter = details::NodeAdapter<YAML::Node>{yaml_node};
-
-  auto ret = t.serialize("", adapter);
+  auto ret = t.serialize("", yaml_node);
   ASSERT_TRUE(ret.has_value()) << "YAML Error: " << ret.error();
 
   std::cout << "YAML Print Data:\n" << t.printable();
