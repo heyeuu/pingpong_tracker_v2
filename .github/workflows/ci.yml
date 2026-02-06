@@ -24,6 +24,9 @@ jobs:
         libyaml-cpp-dev
 
     - name: Configure CMake
+      env:
+        CC: gcc-14
+        CXX: g++-14
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
