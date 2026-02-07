@@ -7,7 +7,7 @@
 
 using namespace rmcs::util;
 
-static_assert(details::yaml_cpp_trait<YAML::Node>, " ");
+static_assert(details::yaml_cpp_trait<YAML::Node>, "YAML::Node must satisfy yaml_cpp_trait");
 
 struct T : Serializable {
   int mem1 = 0;

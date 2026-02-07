@@ -17,7 +17,7 @@ AlignTrailingComments: true
 BreakBeforeBraces: Attach
 
 # 模板定义的换行规则
-BreakTemplateDeclarations: true
+BreakTemplateDeclarations: Yes
 
 # 最大列宽度
 ColumnLimit: 100
@@ -30,4 +30,4 @@ AllowShortFunctionsOnASingleLine: All
 BreakBeforeBinaryOperators: NonAssignment
 PenaltyBreakAssignment: 2
 PenaltyBreakString: 2
-AlignConsecutiveAssignments: true
+AlignConsecutiveAssignments: Consecutive
