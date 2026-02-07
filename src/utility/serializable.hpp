@@ -38,8 +38,7 @@ namespace details {
 
         template <typename T>
             requires details::yaml_cpp_trait<Node>
-        auto get_param(const std::string& name, T& target) noexcept
-            -> std::expected<void, std::string> {
+        auto get_param(const std::string& name, T& target) -> std::expected<void, std::string> {
             try {
                 auto child = node[name];
                 if (!child.IsDefined()) {
@@ -93,7 +92,7 @@ namespace details {
             : metas { std::tuple { metas... } } { }
 
         template <class Node>
-        auto serialize(std::string_view prefix, Node& source, Data& target) const noexcept
+        auto serialize(std::string_view prefix, Node& source, Data& target) const
             -> std::expected<void, std::string> {
             using Ret = std::expected<void, std::string>;
 
@@ -116,7 +115,7 @@ namespace details {
             return std::apply(apply_function, metas);
         }
 
-        auto make_printable_from(const Data& source) const noexcept -> std::string {
+        auto make_printable_from(const Data& source) const -> std::string {
             auto result = std::string {};
 
             auto print_one = [&](const auto& meta) {
@@ -139,19 +138,19 @@ namespace details {
 
 struct Serializable {
     template <typename Metas, std::size_t... Idx>
-    constexpr auto make_serializable_impl(Metas metas, std::index_sequence<Idx...>) {
+    constexpr auto make_serializable_impl(Metas metas, std::index_sequence<Idx...>) const {
         return details::Serializable {
             details::MemberMeta { std::get<Idx * 2>(metas), std::get<Idx * 2 + 1>(metas) }...,
         };
     }
     template <typename Metas>
-    constexpr auto make_serializable(Metas metas) {
+    constexpr auto make_serializable(Metas metas) const {
         constexpr auto N = std::tuple_size_v<Metas>;
         return make_serializable_impl(metas, std::make_index_sequence<N / 2> {});
     }
 
     template <typename T>
-    auto serialize(this T& self, std::string_view prefix, const auto& source) noexcept
+    auto serialize(this T& self, std::string_view prefix, const auto& source)
         -> std::expected<void, std::string> {
 
         static_assert(
@@ -162,13 +161,13 @@ struct Serializable {
     }
 
     template <class T>
-    auto serialize(this T& self, const auto& source) noexcept {
+    auto serialize(this T& self, const auto& source) {
         static_assert(
             details::serializable_metas_trait<T>, "Serializable T must has valid metas tuple");
         return self.serialize("", source);
     }
 
-    auto printable(this auto& self) noexcept {
+    auto printable(this auto& self) {
         auto s = self.make_serializable(self.metas);
         return s.make_printable_from(self);
     }

@@ -27,7 +27,7 @@ struct T : Serializable {
     };
 };
 
-TEST(serializable, node_adapter) {
+TEST(serializable, NodeAdapter) {
     auto param = std::string {};
 
     auto yaml_node    = YAML::Node {};
@@ -38,7 +38,7 @@ TEST(serializable, node_adapter) {
     ASSERT_TRUE(param.empty());
 }
 
-TEST(serializable, node_adapter_type_mismatch) {
+TEST(serializable, NodeAdapterTypeMismatch) {
 
     // Case 1: Scalar instead of sequence (Container-level failure)
     {
@@ -75,7 +75,7 @@ TEST(serializable, node_adapter_type_mismatch) {
     }
 }
 
-TEST(serializable, yaml_cpp) {
+TEST(serializable, YamlCpp) {
     auto yaml_root = YAML::LoadFile("serializable.yaml");
     auto yaml_node = yaml_root["serializable"]["ros__parameters"]["test"];
 
