@@ -163,7 +163,7 @@ struct SerializableMixin {
     }
 
     template <typename T>
-    auto serialize(this T& self, std::string_view prefix, const auto& source)
+    auto serialize(this T& self, std::string_view prefix, auto& source)
         -> std::expected<void, std::string> {
 
         static_assert(details::serializable_metas_trait<T>,
@@ -174,7 +174,7 @@ struct SerializableMixin {
     }
 
     template <class T>
-    auto serialize(this T& self, const auto& source) {
+    auto serialize(this T& self, auto& source) {
         static_assert(details::serializable_metas_trait<T>,
             "SerializableMixin T must have a valid metas tuple");
         return self.serialize("", source);

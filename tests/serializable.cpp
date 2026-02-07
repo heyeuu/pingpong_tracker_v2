@@ -95,3 +95,23 @@ TEST(serializable, YamlCpp) {
     EXPECT_DOUBLE_EQ(t.mem4[1], 2.0);
     EXPECT_DOUBLE_EQ(t.mem4[2], 3.0);
 }
+
+TEST(serializable, YamlCppWithPrefix) {
+    auto node = YAML::Node {};
+    node["prefix.mem1"] = 100;
+    node["prefix.mem2"] = "prefixed";
+    node["prefix.mem3"] = 99.9;
+    node["prefix.mem4"].push_back(1.1);
+    node["prefix.mem4"].push_back(2.2);
+
+    auto t   = T {};
+    auto ret = t.serialize("prefix", node);
+    ASSERT_TRUE(ret.has_value()) << "YAML Error: " << ret.error();
+
+    EXPECT_EQ(t.mem1, 100);
+    EXPECT_EQ(t.mem2, "prefixed");
+    EXPECT_DOUBLE_EQ(t.mem3, 99.9);
+    ASSERT_EQ(t.mem4.size(), 2);
+    EXPECT_DOUBLE_EQ(t.mem4[0], 1.1);
+    EXPECT_DOUBLE_EQ(t.mem4[1], 2.2);
+}
