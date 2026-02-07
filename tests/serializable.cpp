@@ -9,21 +9,21 @@ using namespace rmcs::util;
 
 static_assert(details::yaml_cpp_trait<YAML::Node>, "YAML::Node must satisfy yaml_cpp_trait");
 
-struct T : Serializable {
+struct T : SerializableMixin {
     int mem1 = 0;
     std::string mem2 {};
     double mem3 = 0.0;
     std::vector<double> mem4 {};
 
     static constexpr std::tuple metas {
-        &T::mem1,
         "mem1",
-        &T::mem2,
+        &T::mem1,
         "mem2",
-        &T::mem3,
+        &T::mem2,
         "mem3",
-        &T::mem4,
+        &T::mem3,
         "mem4",
+        &T::mem4,
     };
 };
 

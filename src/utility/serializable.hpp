@@ -136,25 +136,38 @@ namespace details {
 
 } // namespace details
 
-struct Serializable {
+struct SerializableMixin {
     template <typename Metas, std::size_t... Idx>
     constexpr auto make_serializable_impl(Metas metas, std::index_sequence<Idx...>) const {
+        []<std::size_t... I>(std::index_sequence<I...>) {
+            (
+                []<std::size_t J>() {
+                    using NameType = std::tuple_element_t<J * 2, Metas>;
+                    using PtrType  = std::tuple_element_t<J * 2 + 1, Metas>;
+                    static_assert(std::is_convertible_v<NameType, std::string_view>,
+                        "SerializableMixin metas: Even index must be a string (name)");
+                    static_assert(std::is_member_object_pointer_v<PtrType>,
+                        "SerializableMixin metas: Odd index must be a member pointer");
+                }.template operator()<I>(),
+                ...);
+        }(std::index_sequence<Idx...> {});
+
         return details::Serializable {
-            details::MemberMeta { std::get<Idx * 2>(metas), std::get<Idx * 2 + 1>(metas) }...,
+            details::MemberMeta { std::get<Idx * 2 + 1>(metas), std::get<Idx * 2>(metas) }...,
         };
     }
     template <typename Metas>
     constexpr auto make_serializable(Metas metas) const {
-        constexpr auto N = std::tuple_size_v<Metas>;
-        return make_serializable_impl(metas, std::make_index_sequence<N / 2> {});
+        constexpr auto metas_size = std::tuple_size_v<Metas>;
+        return make_serializable_impl(metas, std::make_index_sequence<metas_size / 2> {});
     }
 
     template <typename T>
     auto serialize(this T& self, std::string_view prefix, const auto& source)
         -> std::expected<void, std::string> {
 
-        static_assert(
-            details::serializable_metas_trait<T>, "Serializable T must has valid metas tuple");
+        static_assert(details::serializable_metas_trait<T>,
+            "SerializableMixin T must have a valid metas tuple");
 
         auto s = self.make_serializable(self.metas);
         return s.serialize(prefix, source, self);
@@ -162,8 +175,8 @@ struct Serializable {
 
     template <class T>
     auto serialize(this T& self, const auto& source) {
-        static_assert(
-            details::serializable_metas_trait<T>, "Serializable T must has valid metas tuple");
+        static_assert(details::serializable_metas_trait<T>,
+            "SerializableMixin T must have a valid metas tuple");
         return self.serialize("", source);
     }
 
