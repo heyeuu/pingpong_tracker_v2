@@ -13,6 +13,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    env:
+      CC: gcc-14
+      CXX: g++-14
 
     steps:
     - uses: actions/checkout@v4
@@ -20,7 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake build-essential
+        sudo apt-get install -y cmake build-essential gcc-14 g++-14
 
     - name: Configure CMake
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
