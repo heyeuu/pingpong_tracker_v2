@@ -33,8 +33,8 @@ namespace details {
     struct NodeAdapter {
         Node& node;
 
-        explicit NodeAdapter(Node& node) noexcept
-            : node { node } { }
+        explicit NodeAdapter(Node& node_ref) noexcept
+            : node { node_ref } { }
 
         template <typename T>
             requires details::yaml_cpp_trait<Node>
@@ -75,9 +75,9 @@ namespace details {
         std::string_view meta_name;
         Mem Data::* mem_ptr;
 
-        constexpr explicit MemberMeta(Mem Data::* mem_ptr, std::string_view id) noexcept
+        constexpr explicit MemberMeta(Mem Data::* member_ptr, std::string_view id) noexcept
             : meta_name { id }
-            , mem_ptr { mem_ptr } { }
+            , mem_ptr { member_ptr } { }
 
         template <typename T>
         constexpr decltype(auto) extract_from(T&& data) const noexcept {
