@@ -7,6 +7,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_BUILD_TYPE "Release")
 add_compile_options(-Wall -Wextra -Wpedantic -O3)
 
+find_package(OpenCV REQUIRED)
+find_package(OpenVINO REQUIRED)
+
 ## 依赖管理: GoogleTest
 include(FetchContent)
 FetchContent_Declare(
@@ -28,6 +31,11 @@ set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(yaml-cpp)
 
 ## 代码资源搜索
+file(GLOB_RECURSE PINGPONG_TRACKER_KERNEL
+    CONFIGURE_DEPENDS
+    ${PROJECT_SOURCE_DIR}/src/kernel/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/kernel/*.cc
+)
 file(GLOB_RECURSE PINGPONG_TRACKER_MODULE
     CONFIGURE_DEPENDS
     ${PROJECT_SOURCE_DIR}/src/module/*.cpp
@@ -36,14 +44,38 @@ file(GLOB_RECURSE PINGPONG_TRACKER_MODULE
     ${PROJECT_SOURCE_DIR}/src/utility/*.cc
 )
 
+## 核心构建: kernel and module
+add_library(
+    ${PROJECT_NAME}_kernel SHARED
+    ${PINGPONG_TRACKER_KERNEL}
+)
+target_link_libraries(
+    ${PROJECT_NAME}_kernel
+    ${OpenCV_LIBS}
+    yaml-cpp::yaml-cpp
+)
+
+add_library(
+    ${PROJECT_NAME}_module SHARED
+    ${PINGPONG_TRACKER_MODULE}
+)
+target_link_libraries(
+    ${PROJECT_NAME}_module
+    yaml-cpp::yaml-cpp
+    openvino::runtime
+    ${OpenCV_LIBS}
+)
+
+target_include_directories(${PROJECT_NAME}_module PUBLIC ${PROJECT_SOURCE_DIR}/src)
+
 ## 运行时构建: runtime
 add_executable(
     ${PROJECT_NAME}_runtime
     ${PROJECT_SOURCE_DIR}/src/runtime.cpp
-    ${PINGPONG_TRACKER_MODULE} 
 )
-target_include_directories(${PROJECT_NAME}_runtime PRIVATE
-    ${PROJECT_SOURCE_DIR}/src
+target_link_libraries(${PROJECT_NAME}_runtime PRIVATE
+    ${PROJECT_NAME}_kernel
+    ${PROJECT_NAME}_module
 )
 
 

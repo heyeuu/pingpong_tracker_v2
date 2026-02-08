@@ -6,17 +6,18 @@ inline auto use_memory_header() {
     // Remove warning from unused include
     std::ignore = std::unique_ptr<int>();
 }
-} // namespace internal
+}  // namespace pimpl::internal
 
-#define RMCS_PIMPL_DEFINITION(CLASS)                                                               \
-public:                                                                                            \
-    explicit CLASS();                                                                              \
-    ~CLASS() noexcept;                                                                             \
-    CLASS(const CLASS&)            = delete;                                                       \
-    CLASS& operator=(const CLASS&) = delete;                                                       \
-    CLASS(CLASS&&) noexcept;                                                                       \
-    CLASS& operator=(CLASS&&) noexcept;                                                            \
-                                                                                                   \
-private:                                                                                           \
-    struct Impl;                                                                                   \
+// NOLINTBEGIN(cppcoreguidelines-macro-usage, bugprone-macro-parentheses)
+#define RMCS_PIMPL_DEFINITION(CLASS)         \
+public:                                      \
+    ~CLASS() noexcept;                       \
+    CLASS(const CLASS&)            = delete; \
+    CLASS& operator=(const CLASS&) = delete; \
+    CLASS(CLASS&&) noexcept;                 \
+    CLASS& operator=(CLASS&&) noexcept;      \
+                                             \
+private:                                     \
+    struct Impl;                             \
     std::unique_ptr<Impl> pimpl;
+// NOLINTEND(cppcoreguidelines-macro-usage, bugprone-macro-parentheses)
