@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
+#include <filesystem>
 #include <fstream>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -19,20 +20,22 @@ protected:
     std::string test_image_path;
 
     void SetUp() override {
+        const auto project_root = std::filesystem::path(__FILE__).parent_path().parent_path();
+
         // Setup a valid base config structure
-        config["model_location"]  = "/workspaces/alliance/pingpong_tracker/models/yolov8.onnx";
+        config["model_location"]  = (project_root / "models/yolov8.onnx").string();
         config["infer_device"]    = "CPU";
         config["input_rows"]      = 640;
         config["input_cols"]      = 640;
-        config["score_threshold"] = 0.25;
-        config["nms_threshold"]   = 0.5;
-        test_image_path           = "place/test/path";
+        config["score_threshold"] = 0.5;
+        config["nms_threshold"]   = 0.45;
+        test_image_path           = "/tmp/pingpong_tracker/jump.png";
     }
 };
 
 TEST_F(OpenVinoNetTest, ConfigureFailsWithEmptyConfig) {
-    YAML::Node empty_config;
-    auto result = net.configure(empty_config);
+    auto empty_config = YAML::Node{};
+    auto result       = net.configure(empty_config);
     EXPECT_FALSE(result.has_value());
 }
 
@@ -44,26 +47,26 @@ TEST_F(OpenVinoNetTest, ConfigureFailsWithInvalidModelPath) {
 
     ASSERT_FALSE(result.has_value());
     // Expect OpenVINO to complain about file not found or similar
-    EXPECT_NE(result.error().find("Failed to load model"), std::string::npos)  // fixed typo here
+    EXPECT_NE(result.error().find("Failed to load model"), std::string::npos)
         << "Actual error: " << result.error();
 }
 
 TEST_F(OpenVinoNetTest, SyncInferFailsWithEmptyImage) {
     // Even without configure, empty image check happens first
-    Image empty_image;
+    auto empty_image = Image{};
 
     auto result = net.sync_infer(empty_image);
     EXPECT_FALSE(result.has_value());
 }
 
 TEST_F(OpenVinoNetTest, AsyncInferFailsWithEmptyImage) {
-    Image empty_image;
-    bool callback_invoked = false;
+    auto empty_image      = Image{};
+    auto callback_invoked = false;
 
     net.async_infer(empty_image, [&](auto result) {
         callback_invoked = true;
         ASSERT_FALSE(result.has_value());
-        EXPECT_EQ(result.error(), "Empty image mat");  // fixed typo here
+        EXPECT_EQ(result.error(), "Empty image mat");
     });
 
     EXPECT_TRUE(callback_invoked);
@@ -79,9 +82,9 @@ TEST_F(OpenVinoNetTest, SyncInferSuccessWithValidImage) {
     ASSERT_TRUE(conf_res.has_value()) << "Failed to configure network: " << conf_res.error();
 
     // create valid image
-    cv::Mat img = cv::imread(test_image_path);
+    auto img = cv::imread(test_image_path);
     ASSERT_FALSE(img.empty()) << "Failed to load image from: " << test_image_path;
-    Image valid_image;
+    auto valid_image          = Image{};
     valid_image.details().mat = img;
 
     auto result = net.sync_infer(valid_image);

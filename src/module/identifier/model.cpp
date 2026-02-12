@@ -145,8 +145,8 @@ struct OpenVinoNet::Impl {
             .set_color_format(ov::preprocess::ColorFormat::BGR);
         input.preprocess()
             .convert_element_type(ov::element::f32)
-            .convert_color(ov::preprocess::ColorFormat::RGB)
-            .scale(pixel_normalization_factor);
+            .convert_color(ov::preprocess::ColorFormat::RGB);
+        // .scale(pixel_normalization_factor);
         input.model().set_layout(ModelLayout::layout());
 
         // For real-time process, use this mode
@@ -205,30 +205,51 @@ struct OpenVinoNet::Impl {
 
     auto explain_infer_result(ov::InferRequest& finished_request,
                               const PreprocessInfo& info) const noexcept -> std::vector<Ball2D> {
-        auto tensor = finished_request.get_output_tensor();
-        auto& shape = tensor.get_shape();
+        auto tensor       = finished_request.get_output_tensor();
+        const auto& shape = tensor.get_shape();
 
         // YOLOv8 output shape: [1, 5, 8400] -> [Batch, Channels, Anchors]
         // Channels: cx, cy, w, h, score
-        const auto anchors = static_cast<std::size_t>(shape.at(2));  // 8400
+
+        std::size_t anchors  = 0;
+        std::size_t channels = 0;
+        bool is_channel_last = false;
+
+        if (shape.size() == 3) {
+            if (shape[1] > shape[2]) {
+                // [1, 8400, 5]
+                anchors         = shape[1];
+                channels        = shape[2];
+                is_channel_last = true;
+            } else {
+                // [1, 5, 8400]
+                anchors         = shape[2];
+                channels        = shape[1];
+                is_channel_last = false;
+            }
+        } else {
+            anchors  = shape[2];
+            channels = shape[1];
+        }
 
         auto scores = std::vector<float>{};
         auto boxes  = std::vector<cv::Rect>{};
         scores.reserve(anchors);
         boxes.reserve(anchors);
 
-        auto* data = tensor.data<float>();
-
-        const auto stride = shape[2];
+        const auto* data = tensor.data<float>();
 
         for (std::size_t i = 0; i < anchors; ++i) {
-            const auto score = data[ChannelIndex::score * stride + i];
+            const auto offset = is_channel_last ? (i * channels) : i;
+            const auto stride = is_channel_last ? 1 : anchors;
+
+            const auto score = data[offset + ChannelIndex::score * stride];
 
             if (score > config.score_threshold) {
-                const auto cx = data[ChannelIndex::cx * stride + i];
-                const auto cy = data[ChannelIndex::cy * stride + i];
-                const auto w  = data[ChannelIndex::w * stride + i];
-                const auto h  = data[ChannelIndex::h * stride + i];
+                const auto cx = data[offset + ChannelIndex::cx * stride];
+                const auto cy = data[offset + ChannelIndex::cy * stride];
+                const auto w  = data[offset + ChannelIndex::w * stride];
+                const auto h  = data[offset + ChannelIndex::h * stride];
 
                 const auto x = static_cast<int>(cx - w * 0.5f);
                 const auto y = static_cast<int>(cy - h * 0.5f);
