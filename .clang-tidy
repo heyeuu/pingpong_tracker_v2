@@ -13,7 +13,8 @@ Checks: >
   -readability-identifier-length,
   -bugprone-easily-swappable-parameters,
   -cppcoreguidelines-pro-type-vararg,
-  -cppcoreguidelines-special-member-functions
+  -cppcoreguidelines-special-member-functions,
+  -misc-non-private-member-variables-in-classes
 
 WarningsAsErrors: 'bugprone-*,google-*,performance-*'
 

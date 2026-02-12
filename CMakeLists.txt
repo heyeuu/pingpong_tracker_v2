@@ -54,6 +54,7 @@ target_link_libraries(
     ${OpenCV_LIBS}
     yaml-cpp::yaml-cpp
 )
+target_include_directories(${PROJECT_NAME}_kernel PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
 add_library(
     ${PROJECT_NAME}_module SHARED
@@ -65,7 +66,6 @@ target_link_libraries(
     openvino::runtime
     ${OpenCV_LIBS}
 )
-
 target_include_directories(${PROJECT_NAME}_module PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
 ## 运行时构建: runtime

@@ -1,0 +1,14 @@
+identifier:
+  binarization_threshold: 0.5
+
+  # openvino infer
+  model_location: "models/best.onnx"
+  infer_device: "AUTO"
+  use_roi_segment: false
+  use_corner_correction: false
+  roi_rows: 640
+  roi_cols: 640
+  input_rows: 640
+  input_cols: 640
+  score_threshold: 0.7
+  nms_threshold: 0.3

@@ -18,7 +18,6 @@ struct Image::Details {
         return mat.rows;
     }
 
-private:
     cv::Mat mat;
 };
 

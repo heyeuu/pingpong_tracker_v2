@@ -4,7 +4,7 @@
 #include <span>
 #include <type_traits>
 
-#include "utility/ball/ball.hpp"
+#include "utility/math/point.hpp"
 
 namespace pingpong_tracker {
 
