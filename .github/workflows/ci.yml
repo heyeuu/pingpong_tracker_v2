@@ -16,6 +16,8 @@ jobs:
     env:
       CC: gcc-14
       CXX: g++-14
+      SRC_DIR: ${{ github.workspace }}/src
+      TEST_ASSETS_ROOT: /tmp/auto_aim
 
     steps:
     - uses: actions/checkout@v4
@@ -23,7 +25,21 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake build-essential gcc-14 g++-14
+        sudo apt-get install -y cmake build-essential gcc-14 g++-14 yq wget gnupg
+
+        wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+        sudo apt-key add ./GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+        rm ./GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+        echo "deb https://apt.repos.intel.com/openvino ubuntu24 main" | sudo tee /etc/apt/sources.list.d/intel-openvino.list
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends openvino-2025.2.0
+
+    - name: Download test assets
+      shell: bash
+      run: |
+        cd "$SRC_DIR/tests"
+        TEST_ASSETS_ROOT="$TEST_ASSETS_ROOT" ./download_assets.sh
+
 
     - name: Configure CMake
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
