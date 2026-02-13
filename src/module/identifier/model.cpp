@@ -6,6 +6,7 @@
 #include <openvino/runtime/compiled_model.hpp>
 #include <openvino/runtime/core.hpp>
 #include <openvino/runtime/exception.hpp>
+#include <span>
 
 #include "utility/ball/ball.hpp"
 #include "utility/image/image.details.hpp"
@@ -40,10 +41,10 @@ struct Dimensions {
 
 template <char _1, char _2, char _3, char _4>
 struct TensorLayout {
-    static constexpr std::array chars{_1, _2, _3, _4, '\0'};
+    static constexpr std::array kChars{_1, _2, _3, _4, '\0'};
 
     constexpr static auto layout() noexcept {
-        return ov::Layout{chars.data()};
+        return ov::Layout{kChars.data()};
     }
 
     constexpr static auto partial_shape(const Dimensions& dimensions) noexcept {
@@ -77,8 +78,6 @@ struct OpenVinoNet::Impl {
     struct Nothing {};
     std::shared_ptr<Nothing> living_flag{std::make_shared<Nothing>()};
 
-    static constexpr auto pixel_normalization_factor = 255.0;
-
     struct PreprocessInfo {
         float adapt_scaling;
         float pad_x;
@@ -86,22 +85,22 @@ struct OpenVinoNet::Impl {
     };
 
     struct ChannelIndex {
-        static constexpr size_t cx    = 0;
-        static constexpr size_t cy    = 1;
-        static constexpr size_t w     = 2;
-        static constexpr size_t h     = 3;
-        static constexpr size_t score = 4;
+        static constexpr size_t kCx    = 0;
+        static constexpr size_t kCy    = 1;
+        static constexpr size_t kW     = 2;
+        static constexpr size_t kH     = 3;
+        static constexpr size_t kScore = 4;
     };
 
     struct Config : util::SerializableMixin {
-        std::string model_location;
-        std::string infer_device;
+        std::string model_location{"../../../models/yolov8.onnx"};
+        std::string infer_device{"AUTO"};
 
-        int input_rows;
-        int input_cols;
+        int input_rows = 640;
+        int input_cols = 640;
 
-        float score_threshold;
-        float nms_threshold;
+        float score_threshold = 0.5F;
+        float nms_threshold   = 0.5F;
 
         constexpr static std::tuple metas{
             // clang-format off
@@ -146,7 +145,7 @@ struct OpenVinoNet::Impl {
         input.preprocess()
             .convert_element_type(ov::element::f32)
             .convert_color(ov::preprocess::ColorFormat::RGB);
-        // .scale(pixel_normalization_factor);
+
         input.model().set_layout(ModelLayout::layout());
 
         // For real-time process, use this mode
@@ -173,9 +172,9 @@ struct OpenVinoNet::Impl {
         const auto rows   = config.input_rows;
         const auto cols   = config.input_cols;
         auto input_tensor = ov::Tensor{ov::element::u8, InputLayout::shape({.W = cols, .H = rows})};
-        auto adapt_scaling = 1.0f;
-        auto pad_x         = 0.0f;
-        auto pad_y         = 0.0f;
+        auto adapt_scaling = 1.0F;
+        auto pad_x         = 0.0F;
+        auto pad_y         = 0.0F;
 
         {
             adapt_scaling = std::min(static_cast<float>(1. * cols / origin_mat.cols),
@@ -200,7 +199,9 @@ struct OpenVinoNet::Impl {
         auto request = openvino_model.create_infer_request();
         request.set_input_tensor(input_tensor);
 
-        return std::make_pair(std::move(request), PreprocessInfo{adapt_scaling, pad_x, pad_y});
+        return std::make_pair(
+            std::move(request),
+            PreprocessInfo{.adapt_scaling = adapt_scaling, .pad_x = pad_x, .pad_y = pad_y});
     }
 
     auto explain_infer_result(ov::InferRequest& finished_request,
@@ -237,19 +238,19 @@ struct OpenVinoNet::Impl {
         scores.reserve(anchors);
         boxes.reserve(anchors);
 
-        const auto* data = tensor.data<float>();
+        const auto data = std::span{tensor.data<float>(), tensor.get_size()};
 
         for (std::size_t i = 0; i < anchors; ++i) {
             const auto offset = is_channel_last ? (i * channels) : i;
             const auto stride = is_channel_last ? 1 : anchors;
 
-            const auto score = data[offset + ChannelIndex::score * stride];
+            const auto score = data[offset + (ChannelIndex::kScore * stride)];
 
             if (score > config.score_threshold) {
-                const auto cx = data[offset + ChannelIndex::cx * stride];
-                const auto cy = data[offset + ChannelIndex::cy * stride];
-                const auto w  = data[offset + ChannelIndex::w * stride];
-                const auto h  = data[offset + ChannelIndex::h * stride];
+                const auto cx = data[offset + (ChannelIndex::kCx * stride)];
+                const auto cy = data[offset + (ChannelIndex::kCy * stride)];
+                const auto w  = data[offset + (ChannelIndex::kW * stride)];
+                const auto h  = data[offset + (ChannelIndex::kH * stride)];
 
                 const auto x = static_cast<int>(cx - w * 0.5f);
                 const auto y = static_cast<int>(cy - h * 0.5f);
@@ -267,11 +268,11 @@ struct OpenVinoNet::Impl {
 
         for (const auto idx : indices) {
             const auto& rect  = boxes[idx];
-            const auto radius = (rect.width + rect.height) / 4.0f;
+            const auto radius = (rect.height + rect.width) / 4.0F;
 
             // Coordinate restoration with padding and scaling
-            const auto center_x = (rect.x + rect.width / 2.0f - info.pad_x) / info.adapt_scaling;
-            const auto center_y = (rect.y + rect.height / 2.0f - info.pad_y) / info.adapt_scaling;
+            const auto center_x = (rect.width / 2.0F + rect.x - info.pad_x) / info.adapt_scaling;
+            const auto center_y = (rect.height / 2.0F + rect.y - info.pad_y) / info.adapt_scaling;
 
             final_result.push_back(Ball2D{
                 .center     = {center_x, center_y},
@@ -305,14 +306,13 @@ struct OpenVinoNet::Impl {
         auto [request, info] = std::move(result.value());
         auto living_weak     = std::weak_ptr{living_flag};
 
-        // Capture the InferRequest by value to ensure its lifetime during async execution.
         request.set_callback([request = std::move(request), callback = std::move(callback),
                               info = info, living_weak, this](const auto& e) mutable {
             if (!living_weak.lock()) {
                 callback(std::unexpected{"Model source is no longer living"});
                 return;
             }
-            // Lock-Free Async: No locks are used in this callback.
+
             if (e) {
                 auto error = std::string{};
                 try {
@@ -330,12 +330,11 @@ struct OpenVinoNet::Impl {
                 callback(std::unexpected{error});
                 return;
             }
-            // C++23 mdspan: explain_infer_result uses std::mdspan for output tensor access.
+
             auto result = explain_infer_result(request, info);
             callback(std::move(result));
 
-            // Break the circular reference: request -> callback -> request
-            request.set_callback([](std::exception_ptr) {});
+            request.set_callback([](const std::exception_ptr&) {});
         });
         request.start_async();
     }

@@ -14,11 +14,9 @@ struct BallInferResult {
         precision_type x, y;
     };
 
-    // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     Point point;
 
     precision_type confidence;
-    // NOLINTEND(misc-non-private-member-variables-in-classes)
 
     auto unsafe_from(std::span<const precision_type> raw) noexcept -> void {
         static_assert(std::is_trivially_copyable_v<BallInferResult>);

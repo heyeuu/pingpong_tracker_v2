@@ -33,7 +33,7 @@ public:
             return std::move(result);
         }
         auto await_suspend(handle_type coroutine) noexcept {
-            network.async_infer(readonly, [=, this](auto result) {
+            network.async_infer(readonly, [coroutine, this](auto result) {
                 this->result = std::move(result);
                 coroutine.resume();
             });
@@ -44,7 +44,7 @@ public:
     };
 
     auto await_infer(const Image& image) noexcept -> AsyncResult {
-        return AsyncResult{*this, image};
+        return AsyncResult{.network = *this, .readonly = image};
     }
 };
 
