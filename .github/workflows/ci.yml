@@ -17,7 +17,7 @@ jobs:
       CC: gcc-14
       CXX: g++-14
       SRC_DIR: ${{ github.workspace }}/src
-      TEST_ASSETS_ROOT: /tmp/auto_aim
+      TEST_DIR: ${SRC_DIR}/tests
 
     steps:
     - uses: actions/checkout@v4
@@ -34,11 +34,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends openvino-2025.2.0
 
-    - name: Download test assets
+    - name: Download tests assets
       shell: bash
       run: |
-        cd "$SRC_DIR/tests"
-        TEST_ASSETS_ROOT="$TEST_ASSETS_ROOT" ./download_assets.sh
+        cd "${TEST_DIR}"
+        ./download_assets.sh
 
 
     - name: Configure CMake
