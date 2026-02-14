@@ -14,8 +14,20 @@ struct BallDetection::Impl {
     auto sync_detect(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
         return openvino_net.sync_infer(image);
     }
-
-
 };
+
+BallDetection::BallDetection() : pimpl{std::make_unique<Impl>()} {
+}
+
+BallDetection::~BallDetection() = default;
+
+auto BallDetection::initialize(const YAML::Node& yaml) noexcept
+    -> std::expected<void, std::string> {
+    return pimpl->initialize(yaml);
+}
+
+auto BallDetection::sync_detect(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
+    return pimpl->sync_detect(image);
+}
 
 }  // namespace pingpong_tracker::identifier

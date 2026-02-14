@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 设置：如果任何命令失败，立即退出，对管道也生效
-set -eo pipefail
+set -euo pipefail
 
 # --- 配置 ---
 #  获取脚本自身的目录，用于定位配置文件
@@ -42,7 +42,7 @@ download_asset() {
     local asset_id="$1"
     local url="$2"
     local filename
-    filename=$(basename "$url")
+    filename=$(basename "${url%%\?*}")
     local local_path="$DOWNLOAD_DIR/$filename"
 
     if [ -f "$local_path" ]; then

@@ -149,10 +149,10 @@ struct OpenVinoNet::Impl {
         input.model().set_layout(ModelLayout::layout());
 
         // For real-time process, use this mode
-        const auto performance  = ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY);
-        const auto processe_out = preprocess.build();
+        const auto performance = ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY);
+        const auto preprocessed_out = preprocess.build();
         openvino_model =
-            openvino_core.compile_model(processe_out, config.infer_device, performance);
+            openvino_core.compile_model(preprocessed_out, config.infer_device, performance);
         return {};
 
     } catch (const std::runtime_error& e) {
@@ -177,11 +177,10 @@ struct OpenVinoNet::Impl {
         auto pad_y         = 0.0F;
 
         {
-            adapt_scaling = std::min(static_cast<float>(1. * cols / origin_mat.cols),
-                                     static_cast<float>(1. * rows / origin_mat.rows));
+            adapt_scaling = std::min(1.0F * cols / origin_mat.cols, 1.0F * rows / origin_mat.rows);
 
-            const auto scaled_w = static_cast<int>(1. * origin_mat.cols * adapt_scaling);
-            const auto scaled_h = static_cast<int>(1. * origin_mat.rows * adapt_scaling);
+            const auto scaled_w = static_cast<int>(1.0F * origin_mat.cols * adapt_scaling);
+            const auto scaled_h = static_cast<int>(1.0F * origin_mat.rows * adapt_scaling);
 
             // Calculate padding for center alignment
             const auto pad_w_int = (cols - scaled_w) / 2;
@@ -228,9 +227,11 @@ struct OpenVinoNet::Impl {
                 channels        = shape[1];
                 is_channel_last = false;
             }
-        } else {
+        } else if (shape.size() >= 3) {
             anchors  = shape[2];
             channels = shape[1];
+        } else {
+            return {};
         }
 
         auto scores = std::vector<float>{};
