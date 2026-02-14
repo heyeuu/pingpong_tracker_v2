@@ -17,8 +17,8 @@ jobs:
       CC: gcc-14
       CXX: g++-14
       SRC_DIR: ${{ github.workspace }}/src
-      TEST_DIR: ${SRC_DIR}/tests
-      TEST_ASSETS_ROOT: /tmp/pingpong_tracker
+      TEST_DIR: ${{ github.workspace }}/src/tests
+      TEST_ASSETS_ROOT: ${{ runner.temp }}/pingpong_tracker
 
     steps:
     - uses: actions/checkout@v4
