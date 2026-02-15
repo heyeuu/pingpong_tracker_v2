@@ -51,6 +51,7 @@ add_library(
 )
 target_link_libraries(
     ${PROJECT_NAME}_kernel
+    ${PROJECT_NAME}_module
     ${OpenCV_LIBS}
     yaml-cpp::yaml-cpp
 )

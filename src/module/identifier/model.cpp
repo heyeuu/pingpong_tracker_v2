@@ -203,181 +203,167 @@ struct OpenVinoNet::Impl {
             PreprocessInfo{.adapt_scaling = adapt_scaling, .pad_x = pad_x, .pad_y = pad_y});
     }
 
-    auto explain_infer_result(ov::InferRequest& finished_request,
-                              const PreprocessInfo& info) const noexcept -> std::vector<Ball2D> {
-        static auto explain_infer_result(ov::InferRequest & finished_request,
-                                         const PreprocessInfo& info, const Config& config) noexcept
-            -> std::vector<Ball2D> {
-            auto tensor       = finished_request.get_output_tensor();
-            const auto& shape = tensor.get_shape();
+    static auto explain_infer_result(ov::InferRequest& finished_request, const PreprocessInfo& info,
+                                     const Config& config) noexcept -> std::vector<Ball2D> {
+        auto tensor       = finished_request.get_output_tensor();
+        const auto& shape = tensor.get_shape();
 
-            // YOLOv8 output shape: [1, 5, 8400] -> [Batch, Channels, Anchors]
-            // Channels: cx, cy, w, h, score
+        // YOLOv8 output shape: [1, 5, 8400] -> [Batch, Channels, Anchors]
+        // Channels: cx, cy, w, h, score
 
-            std::size_t anchors  = 0;
-            std::size_t channels = 0;
-            bool is_channel_last = false;
+        std::size_t anchors  = 0;
+        std::size_t channels = 0;
+        bool is_channel_last = false;
 
-            if (shape.size() == 3) {
-                if (shape[1] > shape[2]) {
-                    // [1, 8400, 5]
-                    anchors         = shape[1];
-                    channels        = shape[2];
-                    is_channel_last = true;
-                } else {
-                    // [1, 5, 8400]
-                    anchors         = shape[2];
-                    channels        = shape[1];
-                    is_channel_last = false;
-                }
-            } else if (shape.size() >= 3) {
-                anchors  = shape[2];
-                channels = shape[1];
+        if (shape.size() == 3) {
+            if (shape[1] > shape[2]) {
+                // [1, 8400, 5]
+                anchors         = shape[1];
+                channels        = shape[2];
+                is_channel_last = true;
             } else {
-                return {};
+                // [1, 5, 8400]
+                anchors         = shape[2];
+                channels        = shape[1];
+                is_channel_last = false;
             }
-
-            auto scores = std::vector<float>{};
-            auto boxes  = std::vector<cv::Rect>{};
-            scores.reserve(anchors);
-            boxes.reserve(anchors);
-
-            const auto data = std::span{tensor.data<float>(), tensor.get_size()};
-
-            for (std::size_t i = 0; i < anchors; ++i) {
-                const auto offset = is_channel_last ? (i * channels) : i;
-                const auto stride = is_channel_last ? 1 : anchors;
-
-                const auto score = data[offset + (ChannelIndex::kScore * stride)];
-
-                if (score > config.score_threshold) {
-                    const auto cx = data[offset + (ChannelIndex::kCx * stride)];
-                    const auto cy = data[offset + (ChannelIndex::kCy * stride)];
-                    const auto w  = data[offset + (ChannelIndex::kW * stride)];
-                    const auto h  = data[offset + (ChannelIndex::kH * stride)];
-
-                    const auto x = static_cast<int>(cx - w * 0.5f);
-                    const auto y = static_cast<int>(cy - h * 0.5f);
-
-                    boxes.emplace_back(x, y, static_cast<int>(w), static_cast<int>(h));
-                    scores.push_back(score);
-                }
-            }
-
-            auto indices = std::vector<int>{};
-            cv::dnn::NMSBoxes(boxes, scores, config.score_threshold, config.nms_threshold, indices);
-
-            auto final_result = std::vector<Ball2D>{};
-            final_result.reserve(indices.size());
-
-            for (const auto idx : indices) {
-                const auto& rect  = boxes[idx];
-                const auto radius = (rect.height + rect.width) / 4.0F;
-
-                // Coordinate restoration with padding and scaling
-                const auto center_x =
-                    (rect.width / 2.0F + rect.x - info.pad_x) / info.adapt_scaling;
-                const auto center_y =
-                    (rect.height / 2.0F + rect.y - info.pad_y) / info.adapt_scaling;
-
-                final_result.push_back(Ball2D{
-                    .center     = {center_x, center_y},
-                    .radius     = radius,
-                    .confidence = scores[idx],
-                });
-            }
-
-            return final_result;
+        } else if (shape.size() >= 3) {
+            anchors  = shape[2];
+            channels = shape[1];
+        } else {
+            return {};
         }
 
-        auto sync_infer(const Image& image) noexcept -> Result {
-            auto result = generate_openvino_request(image);
-            if (!result.has_value()) {
-                return std::unexpected{result.error()};
-            }
+        auto scores = std::vector<float>{};
+        auto boxes  = std::vector<cv::Rect>{};
+        scores.reserve(anchors);
+        boxes.reserve(anchors);
 
-            try {
-                auto [request, info] = std::move(result.value());
-                request.infer();
-                return explain_infer_result(request, info, config);
-            } catch (const std::exception& e) {
-                return std::unexpected{std::string("Inference failed | ") + e.what()};
-            } catch (...) {
-                return std::unexpected{"Inference failed | Unknown exception"};
+        const auto data = std::span{tensor.data<float>(), tensor.get_size()};
+
+        for (std::size_t i = 0; i < anchors; ++i) {
+            const auto offset = is_channel_last ? (i * channels) : i;
+            const auto stride = is_channel_last ? 1 : anchors;
+
+            const auto score = data[offset + (ChannelIndex::kScore * stride)];
+
+            if (score > config.score_threshold) {
+                const auto cx = data[offset + (ChannelIndex::kCx * stride)];
+                const auto cy = data[offset + (ChannelIndex::kCy * stride)];
+                const auto w  = data[offset + (ChannelIndex::kW * stride)];
+                const auto h  = data[offset + (ChannelIndex::kH * stride)];
+
+                const auto x = static_cast<int>(cx - w * 0.5f);
+                const auto y = static_cast<int>(cy - h * 0.5f);
+
+                boxes.emplace_back(x, y, static_cast<int>(w), static_cast<int>(h));
+                scores.push_back(score);
             }
         }
 
-        auto async_infer(const Image& image, Callback callback) noexcept -> void {
-            auto result = generate_openvino_request(image);
-            if (!result.has_value()) {
-                std::invoke(callback, std::unexpected{result.error()});
+        auto indices = std::vector<int>{};
+        cv::dnn::NMSBoxes(boxes, scores, config.score_threshold, config.nms_threshold, indices);
+
+        auto final_result = std::vector<Ball2D>{};
+        final_result.reserve(indices.size());
+
+        for (const auto idx : indices) {
+            const auto& rect  = boxes[idx];
+            const auto radius = (rect.height + rect.width) / 4.0F;
+
+            // Coordinate restoration with padding and scaling
+            const auto center_x = (rect.width / 2.0F + rect.x - info.pad_x) / info.adapt_scaling;
+            const auto center_y = (rect.height / 2.0F + rect.y - info.pad_y) / info.adapt_scaling;
+
+            final_result.push_back(Ball2D{
+                .center     = {center_x, center_y},
+                .radius     = radius,
+                .confidence = scores[idx],
+            });
+        }
+
+        return final_result;
+    }
+
+    auto sync_infer(const Image& image) noexcept -> Result {
+        auto result = generate_openvino_request(image);
+        if (!result.has_value()) {
+            return std::unexpected{result.error()};
+        }
+
+        auto [request, info] = std::move(result.value());
+        request.infer();
+
+        return explain_infer_result(request, info, config);
+    }
+
+    auto async_infer(const Image& image, Callback callback) noexcept -> void {
+        auto result = generate_openvino_request(image);
+        if (!result.has_value()) {
+            std::invoke(callback, std::unexpected{result.error()});
+            return;
+        }
+
+        auto [request, info] = std::move(result.value());
+        auto living_weak     = std::weak_ptr{living_flag};
+
+        request.set_callback([request, callback = std::move(callback), info = info, living_weak,
+                              config = config](const auto& e) mutable {
+            if (!living_weak.lock()) {
+                callback(std::unexpected{"Model source is no longer living"});
                 return;
             }
 
-            auto [request, info] = std::move(result.value());
-            auto living_weak     = std::weak_ptr{living_flag};
-
-        request.set_callback([request, callback = std::move(callback), info = info, living_weak,
-                              this](const auto& e) mutable {
-                              config = config](const auto& e) mutable {
-                                  if (!living_weak.lock()) {
-                                      callback(std::unexpected{"Model source is no longer living"});
-                                      return;
-                                  }
-
-                                  if (e) {
-                                      auto error = std::string{};
-                                      try {
-                                          std::rethrow_exception(e);
-                                      } catch (const ov::Cancelled& e) {
-                                          error += "Cancelled | ";
-                                          error += e.what();
-                                      } catch (const ov::Busy& e) {
-                                          error = "Busy | ";
-                                          error += e.what();
-                                      } catch (const std::exception& e) {
-                                          error = "Unknown | ";
-                                          error += e.what();
-                                      }
-                                      callback(std::unexpected{error});
-                                      request.set_callback([](const std::exception_ptr&) {});
-                                      return;
-                                  }
-
-                                  auto result = explain_infer_result(request, info);
-                                  auto result = explain_infer_result(request, info, config);
-                                  callback(std::move(result));
-
-                                  request.set_callback([](const std::exception_ptr&) {});
-                              });
-                              request.start_async();
-    }
-        };
-
-        OpenVinoNet::OpenVinoNet() : pimpl{std::make_unique<Impl>()} {
-        }
-
-        OpenVinoNet::~OpenVinoNet() = default;
-
-        auto OpenVinoNet::configure(const YAML::Node& yaml) noexcept
-            -> std::expected<void, std::string> {
-            return pimpl->configure(yaml);
-        }
-
-        auto OpenVinoNet::sync_infer(const Image& image) noexcept
-            -> std::optional<std::vector<Ball2D>> {
-            auto result = pimpl->sync_infer(image);
-            if (result.has_value()) {
-                return result.value();
+            if (e) {
+                auto error = std::string{};
+                try {
+                    std::rethrow_exception(e);
+                } catch (const ov::Cancelled& e) {
+                    error += "Cancelled | ";
+                    error += e.what();
+                } catch (const ov::Busy& e) {
+                    error = "Busy | ";
+                    error += e.what();
+                } catch (const std::exception& e) {
+                    error = "Unknown | ";
+                    error += e.what();
+                }
+                callback(std::unexpected{error});
+                request.set_callback([](const std::exception_ptr&) {});
+                return;
             }
-            return std::nullopt;
-        }
 
-        auto OpenVinoNet::async_infer(
-            const Image& image,
-            std::function<void(std::expected<std::vector<Ball2D>, std::string>)> callback) noexcept
-            -> void {
-            pimpl->async_infer(image, std::move(callback));
-        }
+            auto result = explain_infer_result(request, info, config);
+            callback(std::move(result));
 
-    }  // namespace pingpong_tracker::identifier
+            request.set_callback([](const std::exception_ptr&) {});
+        });
+        request.start_async();
+    }
+};
+
+OpenVinoNet::OpenVinoNet() : pimpl{std::make_unique<Impl>()} {
+}
+
+OpenVinoNet::~OpenVinoNet() = default;
+
+auto OpenVinoNet::configure(const YAML::Node& yaml) noexcept -> std::expected<void, std::string> {
+    return pimpl->configure(yaml);
+}
+
+auto OpenVinoNet::sync_infer(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
+    auto result = pimpl->sync_infer(image);
+    if (result.has_value()) {
+        return result.value();
+    }
+    return std::nullopt;
+}
+
+auto OpenVinoNet::async_infer(
+    const Image& image,
+    std::function<void(std::expected<std::vector<Ball2D>, std::string>)> callback) noexcept
+    -> void {
+    pimpl->async_infer(image, std::move(callback));
+}
+
+}  // namespace pingpong_tracker::identifier
