@@ -1,37 +1,30 @@
 #include "utility/serializable.hpp"
 
+#include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
-#include <gtest/gtest.h>
 #include <vector>
 
-using namespace rmcs::util;
+using namespace pingpong_tracker::util;
 
 static_assert(details::yaml_cpp_trait<YAML::Node>, "YAML::Node must satisfy yaml_cpp_trait");
 
 struct T : SerializableMixin {
     int mem1 = 0;
-    std::string mem2 {};
+    std::string mem2{};
     double mem3 = 0.0;
-    std::vector<double> mem4 {};
+    std::vector<double> mem4{};
 
-    static constexpr std::tuple metas {
-        "mem1",
-        &T::mem1,
-        "mem2",
-        &T::mem2,
-        "mem3",
-        &T::mem3,
-        "mem4",
-        &T::mem4,
+    static constexpr std::tuple metas{
+        "mem1", &T::mem1, "mem2", &T::mem2, "mem3", &T::mem3, "mem4", &T::mem4,
     };
 };
 
 TEST(serializable, NodeAdapter) {
-    auto param = std::string {};
+    auto param = std::string{};
 
-    auto yaml_node    = YAML::Node {};
-    auto yaml_adapter = details::NodeAdapter<YAML::Node> { yaml_node };
+    auto yaml_node    = YAML::Node{};
+    auto yaml_adapter = details::NodeAdapter<YAML::Node>{yaml_node};
 
     auto ret2 = yaml_adapter.get_param("", param);
     ASSERT_FALSE(ret2.has_value()) << "Expected error for missing key on empty node";
@@ -39,13 +32,12 @@ TEST(serializable, NodeAdapter) {
 }
 
 TEST(serializable, NodeAdapterTypeMismatch) {
-
     // Case 1: Scalar instead of sequence (Container-level failure)
     {
-        std::vector<double> vec {};
-        auto node    = YAML::Node {};
+        std::vector<double> vec{};
+        auto node    = YAML::Node{};
         node["vec"]  = 123;
-        auto adapter = details::NodeAdapter<YAML::Node> { node };
+        auto adapter = details::NodeAdapter<YAML::Node>{node};
         auto ret     = adapter.get_param("vec", vec);
         ASSERT_FALSE(ret.has_value());
         EXPECT_NE(ret.error().find("Type mismatch"), std::string::npos) << "Error: " << ret.error();
@@ -53,11 +45,11 @@ TEST(serializable, NodeAdapterTypeMismatch) {
 
     // Case 2: Sequence with wrong element type (Element-level failure)
     {
-        std::vector<double> vec {};
-        auto node = YAML::Node {};
+        std::vector<double> vec{};
+        auto node = YAML::Node{};
         node["vec"].push_back(1.0);
         node["vec"].push_back("not_a_number");
-        auto adapter = details::NodeAdapter<YAML::Node> { node };
+        auto adapter = details::NodeAdapter<YAML::Node>{node};
         auto ret     = adapter.get_param("vec", vec);
         ASSERT_FALSE(ret.has_value());
         EXPECT_NE(ret.error().find("Type mismatch"), std::string::npos) << "Error: " << ret.error();
@@ -65,10 +57,10 @@ TEST(serializable, NodeAdapterTypeMismatch) {
 
     // Case 3: Null node
     {
-        std::vector<double> vec {};
-        auto node    = YAML::Node {};
+        std::vector<double> vec{};
+        auto node    = YAML::Node{};
         node["vec"]  = YAML::Null;
-        auto adapter = details::NodeAdapter<YAML::Node> { node };
+        auto adapter = details::NodeAdapter<YAML::Node>{node};
         auto ret     = adapter.get_param("vec", vec);
         ASSERT_FALSE(ret.has_value());
         EXPECT_EQ(ret.error(), "Key 'vec' is null");
@@ -81,7 +73,7 @@ TEST(serializable, YamlCpp) {
 
     ASSERT_TRUE(yaml_node.IsMap());
 
-    auto t   = T {};
+    auto t   = T{};
     auto ret = t.serialize("", yaml_node);
     ASSERT_TRUE(ret.has_value()) << "YAML Error: " << ret.error();
 
@@ -97,14 +89,14 @@ TEST(serializable, YamlCpp) {
 }
 
 TEST(serializable, YamlCppWithPrefix) {
-    auto node = YAML::Node {};
+    auto node           = YAML::Node{};
     node["prefix.mem1"] = 100;
     node["prefix.mem2"] = "prefixed";
     node["prefix.mem3"] = 99.9;
     node["prefix.mem4"].push_back(1.1);
     node["prefix.mem4"].push_back(2.2);
 
-    auto t   = T {};
+    auto t   = T{};
     auto ret = t.serialize("prefix", node);
     ASSERT_TRUE(ret.has_value()) << "YAML Error: " << ret.error();
 
