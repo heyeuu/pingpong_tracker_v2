@@ -203,8 +203,8 @@ struct OpenVinoNet::Impl {
             PreprocessInfo{.adapt_scaling = adapt_scaling, .pad_x = pad_x, .pad_y = pad_y});
     }
 
-    static auto explain_infer_result(ov::InferRequest& finished_request, const PreprocessInfo& info,
-                                     const Config& config) noexcept -> std::vector<Ball2D> {
+    auto explain_infer_result(ov::InferRequest& finished_request,
+                              const PreprocessInfo& info) const noexcept -> std::vector<Ball2D> {
         auto tensor       = finished_request.get_output_tensor();
         const auto& shape = tensor.get_shape();
 
@@ -294,7 +294,7 @@ struct OpenVinoNet::Impl {
         auto [request, info] = std::move(result.value());
         request.infer();
 
-        return explain_infer_result(request, info, config);
+        return explain_infer_result(request, info);
     }
 
     auto async_infer(const Image& image, Callback callback) noexcept -> void {
@@ -308,7 +308,7 @@ struct OpenVinoNet::Impl {
         auto living_weak     = std::weak_ptr{living_flag};
 
         request.set_callback([request, callback = std::move(callback), info = info, living_weak,
-                              config = config](const auto& e) mutable {
+                              this](const auto& e) mutable {
             if (!living_weak.lock()) {
                 callback(std::unexpected{"Model source is no longer living"});
                 return;
@@ -333,7 +333,7 @@ struct OpenVinoNet::Impl {
                 return;
             }
 
-            auto result = explain_infer_result(request, info, config);
+            auto result = explain_infer_result(request, info);
             callback(std::move(result));
 
             request.set_callback([](const std::exception_ptr&) {});
