@@ -17,12 +17,11 @@ jobs:
       CC: gcc-14
       CXX: g++-14
       SRC_DIR: ${{ github.workspace }}/src
-      TEST_DIR: ${{ github.workspace }}/src/tests
+      TEST_DIR: ${{ github.workspace }}/tests
       TEST_ASSETS_ROOT: /tmp/pingpong_tracker
 
     steps:
     - uses: actions/checkout@v4
-
     - name: Install dependencies
       run: |
         sudo apt-get update
