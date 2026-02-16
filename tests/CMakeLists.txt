@@ -1,16 +1,3 @@
-# --- Dependencies ---
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG        v1.15.2
-)
-FetchContent_MakeAvailable(googletest)
-
-include(GoogleTest)
-find_package(OpenCV REQUIRED)
-find_package(yaml-cpp REQUIRED)
-
 # --- Tests ---
 
 # Serializable Test
@@ -22,6 +9,7 @@ target_link_libraries(test_serializable PRIVATE
     yaml-cpp
 )
 configure_file(serializable.yaml ${CMAKE_CURRENT_BINARY_DIR}/serializable.yaml COPYONLY)
+include(GoogleTest)
 gtest_discover_tests(test_serializable)
 
 # Model Test
