@@ -21,4 +21,5 @@ target_link_libraries(model_test PRIVATE
     yaml-cpp
     ${OpenCV_LIBS}
 )
+target_compile_definitions(model_test PRIVATE PROJECT_ROOT=\"${PROJECT_SOURCE_DIR}\")
 gtest_discover_tests(model_test)

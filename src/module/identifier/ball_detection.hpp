@@ -1,9 +1,10 @@
 #pragma once
 
-#include <yaml-cpp/yaml.h>
+#include <yaml-cpp/node/node.h>
 
 #include <expected>
-#include <opencv2/core/types.hpp>
+#include <optional>
+#include <vector>
 
 #include "utility/ball/ball.hpp"
 #include "utility/image/image.hpp"

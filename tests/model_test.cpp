@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
+#include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
@@ -20,16 +20,26 @@ protected:
     std::string test_image_path;
 
     void SetUp() override {
-        const auto project_root = std::filesystem::path(__FILE__).parent_path().parent_path();
+        const auto project_root = std::filesystem::path(PROJECT_ROOT);
+        const auto get_path     = [](const char* env_var, std::filesystem::path fallback) {
+            if (const auto env = std::getenv(env_var)) {
+                return std::filesystem::path(env);
+            }
+            return fallback;
+        };
+
+        const auto assets_root = get_path("TEST_ASSETS_ROOT", "/tmp/pingpong_tracker");
+        const auto models_root = get_path("TEST_MODELS_ROOT", project_root / "models");
 
         // Setup a valid base config structure
-        config["model_location"]  = (project_root / "models/yolov8.onnx").string();
+        config["model_location"]  = (models_root / "yolov8.onnx").string();
         config["infer_device"]    = "CPU";
         config["input_rows"]      = 640;
         config["input_cols"]      = 640;
         config["score_threshold"] = 0.5;
         config["nms_threshold"]   = 0.45;
-        test_image_path           = "/tmp/pingpong_tracker/jump.png";
+
+        test_image_path = (assets_root / "jump.png").string();
     }
 };
 

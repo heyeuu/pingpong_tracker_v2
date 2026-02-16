@@ -39,9 +39,9 @@ struct Dimensions {
     }
 };
 
-template <char _1, char _2, char _3, char _4>
+template <char Dim1, char Dim2, char Dim3, char Dim4>
 struct TensorLayout {
-    static constexpr std::array kChars{_1, _2, _3, _4, '\0'};
+    static constexpr std::array kChars{Dim1, Dim2, Dim3, Dim4, '\0'};
 
     constexpr static auto layout() noexcept {
         return ov::Layout{kChars.data()};
@@ -49,18 +49,18 @@ struct TensorLayout {
 
     constexpr static auto partial_shape(const Dimensions& dimensions) noexcept {
         return ov::PartialShape{
-            dimensions.template at<_1>(),
-            dimensions.template at<_2>(),
-            dimensions.template at<_3>(),
-            dimensions.template at<_4>(),
+            dimensions.template at<Dim1>(),
+            dimensions.template at<Dim2>(),
+            dimensions.template at<Dim3>(),
+            dimensions.template at<Dim4>(),
         };
     }
     constexpr static auto shape(const Dimensions& dimensions) noexcept {
         return ov::Shape{{
-            static_cast<std::size_t>(dimensions.template at<_1>()),
-            static_cast<std::size_t>(dimensions.template at<_2>()),
-            static_cast<std::size_t>(dimensions.template at<_3>()),
-            static_cast<std::size_t>(dimensions.template at<_4>()),
+            static_cast<std::size_t>(dimensions.template at<Dim1>()),
+            static_cast<std::size_t>(dimensions.template at<Dim2>()),
+            static_cast<std::size_t>(dimensions.template at<Dim3>()),
+            static_cast<std::size_t>(dimensions.template at<Dim4>()),
         }};
     }
 };
@@ -269,7 +269,7 @@ struct OpenVinoNet::Impl {
 
         for (const auto idx : indices) {
             const auto& rect  = boxes[idx];
-            const auto radius = (rect.height + rect.width) / 4.0F;
+            const auto radius = ((rect.height + rect.width) / 4.0F) / info.adapt_scaling;
 
             // Coordinate restoration with padding and scaling
             const auto center_x = (rect.width / 2.0F + rect.x - info.pad_x) / info.adapt_scaling;
@@ -285,10 +285,10 @@ struct OpenVinoNet::Impl {
         return final_result;
     }
 
-    auto sync_infer(const Image& image) noexcept -> Result {
+    auto sync_infer(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
         auto result = generate_openvino_request(image);
         if (!result.has_value()) {
-            return std::unexpected{result.error()};
+            return std::nullopt;
         }
 
         auto [request, info] = std::move(result.value());
@@ -352,11 +352,7 @@ auto OpenVinoNet::configure(const YAML::Node& yaml) noexcept -> std::expected<vo
 }
 
 auto OpenVinoNet::sync_infer(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
-    auto result = pimpl->sync_infer(image);
-    if (result.has_value()) {
-        return result.value();
-    }
-    return std::nullopt;
+    return pimpl->sync_infer(image);
 }
 
 auto OpenVinoNet::async_infer(

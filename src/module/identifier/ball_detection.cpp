@@ -8,7 +8,7 @@ struct BallDetection::Impl {
     OpenVinoNet openvino_net;
 
     auto initialize(const YAML::Node& yaml) noexcept {
-        return openvino_net.configure(yaml);  //
+        return openvino_net.configure(yaml);
     }
 
     auto sync_detect(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
@@ -19,7 +19,7 @@ struct BallDetection::Impl {
 BallDetection::BallDetection() : pimpl{std::make_unique<Impl>()} {
 }
 
-BallDetection::~BallDetection() = default;
+BallDetection::~BallDetection() noexcept = default;
 
 auto BallDetection::initialize(const YAML::Node& yaml) noexcept
     -> std::expected<void, std::string> {

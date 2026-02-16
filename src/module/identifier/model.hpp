@@ -5,6 +5,7 @@
 #include <coroutine>
 #include <expected>
 #include <functional>
+#include <optional>
 #include <string>
 
 #include "utility/ball/ball.hpp"

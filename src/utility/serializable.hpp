@@ -35,7 +35,8 @@ struct NodeAdapter {
 
     template <typename T>
         requires details::yaml_cpp_trait<Node>
-    auto get_param(const std::string& name, T& target) -> std::expected<void, std::string> {
+    auto get_param(const std::string& name, T& target) noexcept
+        -> std::expected<void, std::string> {
         try {
             auto child = node_[name];
             if (!child.IsDefined()) {
@@ -56,6 +57,10 @@ struct NodeAdapter {
         } catch (const std::exception& e) {
             return std::unexpected{
                 std::format("Exception while reading '{}': {}", name, e.what()),
+            };
+        } catch (...) {
+            return std::unexpected{
+                std::format("Unknown exception while reading '{}'", name),
             };
         }
         return {};

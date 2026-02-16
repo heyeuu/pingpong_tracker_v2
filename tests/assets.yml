@@ -1,4 +1,4 @@
 resources:
-  #model_test
+  # model_test
   model_infer_img: "https://work.heyeuuu19.com/pingpong_tracker/model_infer/jump.png"
 

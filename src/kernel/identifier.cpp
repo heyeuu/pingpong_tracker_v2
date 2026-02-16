@@ -9,15 +9,10 @@ struct Identifier::Impl {
     identifier::BallDetection ball_detection;
 
     auto initialize(const YAML::Node& yaml) noexcept -> std::expected<void, std::string> {
-        auto result = ball_detection.initialize(yaml);
-        if (!result.has_value()) {
-            return std::unexpected{result.error()};
-        }
-
-        return {};
+        return ball_detection.initialize(yaml);
     }
 
-    auto identify(const Image& src) noexcept {
+    auto identify(const Image& src) noexcept -> std::optional<std::vector<Ball2D>> {
         return ball_detection.sync_detect(src);
     }
 };

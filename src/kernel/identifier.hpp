@@ -3,6 +3,8 @@
 #include <yaml-cpp/node/node.h>
 
 #include <expected>
+#include <optional>
+#include <vector>
 
 #include "utility/ball/ball.hpp"
 #include "utility/image/image.hpp"

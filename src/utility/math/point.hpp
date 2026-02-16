@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <compare>
 
 namespace pingpong_tracker {
@@ -28,6 +29,7 @@ struct Point2D {
         return *this;
     }
     constexpr auto operator/=(double scalar) noexcept -> Point2D& {
+        assert(scalar != 0.0);
         x /= scalar;
         y /= scalar;
         return *this;
