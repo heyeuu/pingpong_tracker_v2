@@ -65,7 +65,7 @@ struct TensorLayout {
     }
 };
 
-struct OpenVinoNet::Impl {
+struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
     using InputLayout = TensorLayout<'N', 'H', 'W', 'C'>;
     using ModelLayout = TensorLayout<'N', 'C', 'H', 'W'>;
 
@@ -75,11 +75,8 @@ struct OpenVinoNet::Impl {
     ov::CompiledModel openvino_model;
     ov::Core openvino_core;
 
-    struct Nothing {};
-    std::shared_ptr<Nothing> living_flag{std::make_shared<Nothing>()};
-
     struct PreprocessInfo {
-        float adapt_scaling;
+        float scale;
         float pad_x;
         float pad_y;
     };
@@ -132,16 +129,17 @@ struct OpenVinoNet::Impl {
         auto preprocess = ov::preprocess::PrePostProcessor{origin_model};
 
         const auto dimensions = Dimensions{
-            .W = config.input_cols,
-            .H = config.input_rows,
+            .W = static_cast<dimension_type>(config.input_cols),
+            .H = static_cast<dimension_type>(config.input_rows),
         };
 
         auto& input = preprocess.input();
         input.tensor()
             .set_element_type(ov::element::u8)
-            .set_shape(InputLayout::partial_shape(dimensions))
+            .set_shape(InputLayout::shape(dimensions))
             .set_layout(InputLayout::layout())
             .set_color_format(ov::preprocess::ColorFormat::BGR);
+
         input.preprocess()
             .convert_element_type(ov::element::f32)
             .convert_color(ov::preprocess::ColorFormat::RGB);
@@ -169,43 +167,59 @@ struct OpenVinoNet::Impl {
             return std::unexpected{"Empty image mat"};
         }
 
-        const auto rows   = config.input_rows;
-        const auto cols   = config.input_cols;
-        auto input_tensor = ov::Tensor{ov::element::u8, InputLayout::shape({.W = cols, .H = rows})};
-        auto adapt_scaling = 1.0F;
-        auto pad_x         = 0.0F;
-        auto pad_y         = 0.0F;
+        const auto input_w = static_cast<float>(config.input_cols);
+        const auto input_h = static_cast<float>(config.input_rows);
+        const auto img_w   = static_cast<float>(origin_mat.cols);
+        const auto img_h   = static_cast<float>(origin_mat.rows);
 
-        {
-            adapt_scaling = std::min(1.0F * cols / origin_mat.cols, 1.0F * rows / origin_mat.rows);
+        const auto scale = std::min(input_w / img_w, input_h / img_h);
+        const auto new_w = static_cast<int>(img_w * scale);
+        const auto new_h = static_cast<int>(img_h * scale);
 
-            const auto scaled_w = static_cast<int>(1.0F * origin_mat.cols * adapt_scaling);
-            const auto scaled_h = static_cast<int>(1.0F * origin_mat.rows * adapt_scaling);
+        auto resized_mat = cv::Mat{};
+        cv::resize(origin_mat, resized_mat, {new_w, new_h});
 
-            // Calculate padding for center alignment
-            const auto pad_w_int = (cols - scaled_w) / 2;
-            const auto pad_h_int = (rows - scaled_h) / 2;
-            pad_x                = static_cast<float>(pad_w_int);
-            pad_y                = static_cast<float>(pad_h_int);
+        const auto pad_w      = static_cast<int>(input_w) - new_w;
+        const auto pad_h      = static_cast<int>(input_h) - new_h;
+        const auto pad_top    = pad_h / 2;
+        const auto pad_bottom = pad_h - pad_top;
+        const auto pad_left   = pad_w / 2;
+        const auto pad_right  = pad_w - pad_left;
 
-            auto input_mat = cv::Mat{rows, cols, CV_8UC3, input_tensor.data()};
-            input_mat.setTo(0);
+        const auto dimensions = Dimensions{
+            .W = static_cast<dimension_type>(config.input_cols),
+            .H = static_cast<dimension_type>(config.input_rows),
+        };
 
-            auto input_roi = cv::Rect2i{pad_w_int, pad_h_int, scaled_w, scaled_h};
-            cv::resize(origin_mat, input_mat(input_roi), {scaled_w, scaled_h});
-        }
+        auto input_tensor = ov::Tensor(ov::element::u8, InputLayout::shape(dimensions));
+        auto tensor_mat =
+            cv::Mat{config.input_rows, config.input_cols, CV_8UC3, input_tensor.data()};
+
+        cv::copyMakeBorder(resized_mat, tensor_mat, pad_top, pad_bottom, pad_left, pad_right,
+                           cv::BORDER_CONSTANT, cv::Scalar{114, 114, 114});
 
         auto request = openvino_model.create_infer_request();
         request.set_input_tensor(input_tensor);
 
-        return std::make_pair(
-            std::move(request),
-            PreprocessInfo{.adapt_scaling = adapt_scaling, .pad_x = pad_x, .pad_y = pad_y});
+        return std::make_pair(std::move(request),
+                              PreprocessInfo{.scale = scale,
+                                             .pad_x = static_cast<float>(pad_left),
+                                             .pad_y = static_cast<float>(pad_top)});
     }
 
     auto explain_infer_result(ov::InferRequest& finished_request,
                               const PreprocessInfo& info) const noexcept -> std::vector<Ball2D> {
-        auto tensor       = finished_request.get_output_tensor();
+        auto tensor          = finished_request.get_output_tensor();
+        auto [boxes, scores] = parse_inference_output(tensor);
+
+        auto indices = std::vector<int>{};
+        cv::dnn::NMSBoxes(boxes, scores, config.score_threshold, config.nms_threshold, indices);
+
+        return restore_coordinates(boxes, scores, indices, info);
+    }
+
+    auto parse_inference_output(const ov::Tensor& tensor) const noexcept
+        -> std::pair<std::vector<cv::Rect>, std::vector<float>> {
         const auto& shape = tensor.get_shape();
 
         // YOLOv8 output shape: [1, 5, 8400] -> [Batch, Channels, Anchors]
@@ -239,7 +253,8 @@ struct OpenVinoNet::Impl {
         scores.reserve(anchors);
         boxes.reserve(anchors);
 
-        const auto data = std::span{tensor.data<float>(), tensor.get_size()};
+        const auto data = std::span<const float>{const_cast<ov::Tensor&>(tensor).data<float>(),
+                                                 tensor.get_size()};
 
         for (std::size_t i = 0; i < anchors; ++i) {
             const auto offset = is_channel_last ? (i * channels) : i;
@@ -261,19 +276,24 @@ struct OpenVinoNet::Impl {
             }
         }
 
-        auto indices = std::vector<int>{};
-        cv::dnn::NMSBoxes(boxes, scores, config.score_threshold, config.nms_threshold, indices);
+        return {std::move(boxes), std::move(scores)};
+    }
 
+    auto restore_coordinates(const std::vector<cv::Rect>& boxes, const std::vector<float>& scores,
+                             const std::vector<int>& indices,
+                             const PreprocessInfo& info) const noexcept -> std::vector<Ball2D> {
         auto final_result = std::vector<Ball2D>{};
         final_result.reserve(indices.size());
 
         for (const auto idx : indices) {
-            const auto& rect  = boxes[idx];
-            const auto radius = ((rect.height + rect.width) / 4.0F) / info.adapt_scaling;
+            const auto& rect = boxes[idx];
 
-            // Coordinate restoration with padding and scaling
-            const auto center_x = (rect.width / 2.0F + rect.x - info.pad_x) / info.adapt_scaling;
-            const auto center_y = (rect.height / 2.0F + rect.y - info.pad_y) / info.adapt_scaling;
+            // Map back to original image using letterbox parameters
+            const auto center_x = (rect.x + rect.width / 2.0F - info.pad_x) / info.scale;
+            const auto center_y = (rect.y + rect.height / 2.0F - info.pad_y) / info.scale;
+
+            // Radius scaling
+            const auto radius = ((rect.height + rect.width) / 4.0F) / info.scale;
 
             final_result.push_back(Ball2D{
                 .center     = {center_x, center_y},
@@ -305,12 +325,13 @@ struct OpenVinoNet::Impl {
         }
 
         auto [request, info] = std::move(result.value());
-        auto living_weak     = std::weak_ptr{living_flag};
+        auto weak_self       = weak_from_this();
 
-        request.set_callback([request, callback = std::move(callback), info = info, living_weak,
-                              this](const auto& e) mutable {
-            if (!living_weak.lock()) {
-                callback(std::unexpected{"Model source is no longer living"});
+        request.set_callback([request, callback = std::move(callback), info = info,
+                              weak_self](const auto& e) mutable {
+            auto self = weak_self.lock();
+            if (!self) {
+                // Lifecycle expired, do not execute callback logic
                 return;
             }
 
@@ -333,7 +354,7 @@ struct OpenVinoNet::Impl {
                 return;
             }
 
-            auto result = explain_infer_result(request, info);
+            auto result = self->explain_infer_result(request, info);
             callback(std::move(result));
 
             request.set_callback([](const std::exception_ptr&) {});
@@ -342,7 +363,7 @@ struct OpenVinoNet::Impl {
     }
 };
 
-OpenVinoNet::OpenVinoNet() : pimpl{std::make_unique<Impl>()} {
+OpenVinoNet::OpenVinoNet() : pimpl{std::make_shared<Impl>()} {
 }
 
 OpenVinoNet::~OpenVinoNet() = default;

@@ -15,10 +15,12 @@
 namespace pingpong_tracker::identifier {
 
 class OpenVinoNet {
-    RMCS_PIMPL_DEFINITION(OpenVinoNet)
+    struct Impl;
+    std::shared_ptr<Impl> pimpl;
 
 public:
     OpenVinoNet();
+    ~OpenVinoNet();
     auto configure(const YAML::Node&) noexcept -> std::expected<void, std::string>;
     auto sync_infer(const Image&) noexcept -> std::optional<std::vector<Ball2D>>;
     auto async_infer(const Image&,

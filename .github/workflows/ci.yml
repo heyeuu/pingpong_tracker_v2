@@ -18,7 +18,7 @@ jobs:
       CXX: g++-14
       TEST_DIR: ${{ github.workspace }}/tests
       TEST_ASSETS_ROOT: /tmp/pingpong_tracker
-      SCRIPTS_DIR:  ${{ github.workspace }}/scripts
+      SCRIPTS_DIR: ${{ github.workspace }}/scripts
 
     steps:
     - uses: actions/checkout@v4
