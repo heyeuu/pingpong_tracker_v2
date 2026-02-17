@@ -9,7 +9,11 @@ set(CMAKE_CXX_STANDARD 23)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
-add_compile_options(-Wall -Wextra -Wpedantic -O3 -march=native)
+add_compile_options(
+  -Wall -Wextra -Wpedantic
+  $<$<CONFIG:Release>:-O3>
+  $<$<CONFIG:Release>:-march=native>
+)
 
 # --- 依赖查找 ---
 find_package(OpenCV REQUIRED)
@@ -65,7 +69,6 @@ add_executable(
 )
 target_link_libraries(${PROJECT_NAME}_runtime PRIVATE
     ${PROJECT_NAME}_kernel
-    ${PROJECT_NAME}_module
 )
 
 # --- 测试构建 ---

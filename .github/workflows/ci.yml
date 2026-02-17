@@ -16,7 +16,6 @@ jobs:
     env:
       CC: gcc-14
       CXX: g++-14
-      SRC_DIR: ${{ github.workspace }}/src
       TEST_DIR: ${{ github.workspace }}/tests
       TEST_ASSETS_ROOT: /tmp/pingpong_tracker
       SCRIPTS_DIR:  ${{ github.workspace }}/scripts
@@ -32,7 +31,7 @@ jobs:
       shell: bash
       run: |
         cd "${TEST_DIR}"
-        ./download_assets.sh
+        bash download_assets.sh
 
 
     - name: Configure CMake

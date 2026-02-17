@@ -88,12 +88,24 @@ TEST_F(OpenVinoNetTest, ConfigureSuccessWithValidModelPath) {
 }
 
 TEST_F(OpenVinoNetTest, SyncInferSuccessWithValidImage) {
+    if (const auto model_path = config["model_location"].as<std::string>();
+        !std::filesystem::exists(model_path)) {
+        GTEST_SKIP() << "Model file not found at: " << model_path;
+    }
+
     auto conf_res = net.configure(config);
     ASSERT_TRUE(conf_res.has_value()) << "Failed to configure network: " << conf_res.error();
 
+    if (!std::filesystem::exists(test_image_path)) {
+        GTEST_SKIP() << "Test image not found at: " << test_image_path;
+    }
+
     // create valid image
     auto img = cv::imread(test_image_path);
-    ASSERT_FALSE(img.empty()) << "Failed to load image from: " << test_image_path;
+    if (img.empty()) {
+        GTEST_SKIP() << "Failed to load image from: " << test_image_path;
+    }
+
     auto valid_image          = Image{};
     valid_image.details().mat = img;
 

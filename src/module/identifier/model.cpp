@@ -351,7 +351,8 @@ auto OpenVinoNet::configure(const YAML::Node& yaml) noexcept -> std::expected<vo
     return pimpl->configure(yaml);
 }
 
-auto OpenVinoNet::sync_infer(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
+auto OpenVinoNet::sync_infer(const Image& image) noexcept
+    -> std::optional<std::vector<Ball2D>> {
     return pimpl->sync_infer(image);
 }
 

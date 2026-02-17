@@ -31,9 +31,13 @@ cleanup() {
 trap cleanup INT TERM
 
 check_dependencies() {
-    if ! command -v yq &>/dev/null || ! command -v curl &>/dev/null; then
-        echo "[FATAL] 错误: 缺少必要的依赖工具 (yq 或 curl)。" >&2
-        echo "请安装 yq (用于解析 YAML) 和 curl (用于下载)。" >&2
+    if ! command -v yq &>/dev/null; then
+        echo "[FATAL] 错误: 缺少 yq" >&2
+        exit 1
+    fi
+
+    if ! command -v curl &>/dev/null; then
+        echo "[FATAL] 错误: 缺少 curl" >&2
         exit 1
     fi
 }

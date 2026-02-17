@@ -6,12 +6,10 @@
 namespace pingpong_tracker {
 
 struct Point2D {
-    // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     double x{0.0};
     double y{0.0};
-    // NOLINTEND(misc-non-private-member-variables-in-classes)
 
-    auto operator<=>(const Point2D&) const -> std::partial_ordering = default;
+    constexpr auto operator<=>(const Point2D&) const -> std::partial_ordering = default;
 
     constexpr auto operator+=(const Point2D& rhs) noexcept -> Point2D& {
         x += rhs.x;

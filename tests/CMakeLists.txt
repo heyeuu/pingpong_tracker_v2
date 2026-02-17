@@ -1,24 +1,24 @@
 # --- Tests ---
+include(GoogleTest)
 
 # Serializable Test
 add_executable(test_serializable serializable.cpp)
 target_include_directories(test_serializable PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(test_serializable PRIVATE
-    pingpong_tracker_module
+    ${PROJECT_NAME}_module
     GTest::gtest_main
-    yaml-cpp
+    yaml-cpp::yaml-cpp
 )
 configure_file(serializable.yaml ${CMAKE_CURRENT_BINARY_DIR}/serializable.yaml COPYONLY)
-include(GoogleTest)
 gtest_discover_tests(test_serializable)
 
 # Model Test
 add_executable(model_test model_test.cpp)
 target_include_directories(model_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(model_test PRIVATE
-    pingpong_tracker_module
+    ${PROJECT_NAME}_module
     GTest::gtest_main
-    yaml-cpp
+    yaml-cpp::yaml-cpp
     ${OpenCV_LIBS}
 )
 target_compile_definitions(model_test PRIVATE PROJECT_ROOT=\"${PROJECT_SOURCE_DIR}\")
