@@ -1,13 +1,6 @@
 #pragma once
 #include <memory>
 
-namespace pimpl::internal {
-inline auto use_memory_header() {
-    // Remove warning from unused include
-    std::ignore = std::unique_ptr<int>();
-}
-}  // namespace pimpl::internal
-
 // NOLINTBEGIN(cppcoreguidelines-macro-usage, bugprone-macro-parentheses)
 #define RMCS_PIMPL_DEFINITION(CLASS)         \
 public:                                      \

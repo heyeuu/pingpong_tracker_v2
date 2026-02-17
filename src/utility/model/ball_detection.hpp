@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+#include <cstddef>
 #include <cstring>
 #include <span>
 #include <type_traits>
@@ -19,6 +21,7 @@ struct BallInferResult {
     precision_type confidence;
 
     auto unsafe_from(std::span<const precision_type> raw) noexcept -> void {
+        assert(raw.size_bytes() >= sizeof(BallInferResult));
         static_assert(std::is_trivially_copyable_v<BallInferResult>);
         static_assert(sizeof(BallInferResult) == 3 * sizeof(precision_type), "Layout mismatch");
         std::memcpy(this, raw.data(), sizeof(BallInferResult));
@@ -36,7 +39,7 @@ struct BallInferResult {
         return T{point.x, point.y};
     }
 
-    constexpr static auto length() noexcept {
+    constexpr static auto length() noexcept -> std::size_t {
         return sizeof(BallInferResult) / sizeof(precision_type);
     }
 };

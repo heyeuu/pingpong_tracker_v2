@@ -10,6 +10,9 @@ struct Image::Details {
     auto set_mat(cv::Mat mat) noexcept -> void {
         this->mat = std::move(mat);
     }
+    [[nodiscard]] auto get_mat() const noexcept -> const cv::Mat& {
+        return mat;
+    }
 
     [[nodiscard]] auto get_cols() const noexcept {
         return mat.cols;
@@ -18,6 +21,7 @@ struct Image::Details {
         return mat.rows;
     }
 
+private:
     cv::Mat mat;
 };
 

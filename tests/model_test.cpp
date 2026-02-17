@@ -106,8 +106,8 @@ TEST_F(OpenVinoNetTest, SyncInferSuccessWithValidImage) {
         GTEST_SKIP() << "Failed to load image from: " << test_image_path;
     }
 
-    auto valid_image          = Image{};
-    valid_image.details().mat = img;
+    auto valid_image = Image{};
+    valid_image.details().set_mat(img);
 
     auto result = net.sync_infer(valid_image);
 

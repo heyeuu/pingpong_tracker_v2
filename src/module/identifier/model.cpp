@@ -164,7 +164,7 @@ struct OpenVinoNet::Impl {
 
     auto generate_openvino_request(const Image& image) noexcept
         -> std::expected<std::pair<ov::InferRequest, PreprocessInfo>, std::string> {
-        const auto& origin_mat = image.details().mat;
+        const auto& origin_mat = image.details().get_mat();
         if (origin_mat.empty()) [[unlikely]] {
             return std::unexpected{"Empty image mat"};
         }
@@ -351,8 +351,7 @@ auto OpenVinoNet::configure(const YAML::Node& yaml) noexcept -> std::expected<vo
     return pimpl->configure(yaml);
 }
 
-auto OpenVinoNet::sync_infer(const Image& image) noexcept
-    -> std::optional<std::vector<Ball2D>> {
+auto OpenVinoNet::sync_infer(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
     return pimpl->sync_infer(image);
 }
 

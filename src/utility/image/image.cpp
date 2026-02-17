@@ -3,7 +3,7 @@
 namespace pingpong_tracker {
 
 struct Image::Impl {
-    Clock::time_point timestamp;
+    Clock::time_point timestamp{};
     Details details;
 };
 
