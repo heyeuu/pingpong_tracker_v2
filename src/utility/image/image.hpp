@@ -5,7 +5,7 @@
 namespace pingpong_tracker {
 
 class Image {
-    RMCS_PIMPL_DEFINITION(Image)
+    PINGPONG_TRACKER_PIMPL_DEFINITION(Image)
 
 public:
     explicit Image();

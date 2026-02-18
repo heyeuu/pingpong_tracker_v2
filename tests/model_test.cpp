@@ -19,8 +19,10 @@
 #include "utility/image/image.details.hpp"
 #include "utility/math/point.hpp"
 
-using namespace pingpong_tracker::identifier;
-using namespace pingpong_tracker;
+using pingpong_tracker::Ball2D;
+using pingpong_tracker::Image;
+using pingpong_tracker::Point2D;
+using pingpong_tracker::identifier::OpenVinoNet;
 
 namespace {
 
@@ -158,22 +160,26 @@ TEST_F(OpenVinoNetTest, AsyncInferFailsWithEmptyImage) {
 }
 
 TEST_F(OpenVinoNetTest, ConfigureSuccessWithValidModelPath) {
-    if (!HasValidModel())
+    if (!HasValidModel()) {
         GTEST_SKIP() << "Model file missing";
+    }
     EXPECT_TRUE(net_.configure(config_).has_value());
 }
 
 TEST_F(OpenVinoNetTest, SyncInferSuccessWithValidImage) {
-    if (!HasValidModel())
+    if (!HasValidModel()) {
         GTEST_SKIP() << "Model file missing";
-    if (!HasValidImage())
+    }
+    if (!HasValidImage()) {
         GTEST_SKIP() << "Test image missing";
+    }
 
     ASSERT_TRUE(net_.configure(config_).has_value());
 
     auto image_opt = LoadTestImage();
-    if (!image_opt)
+    if (!image_opt) {
         GTEST_SKIP() << "Failed to read image";
+    }
 
     auto result = net_.sync_infer(*image_opt);
     ASSERT_TRUE(result.has_value());
@@ -182,30 +188,34 @@ TEST_F(OpenVinoNetTest, SyncInferSuccessWithValidImage) {
 }
 
 TEST_F(OpenVinoNetTest, AsyncInferSuccessWithValidImage) {
-    if (!HasValidModel())
+    if (!HasValidModel()) {
         GTEST_SKIP() << "Model file missing";
-    if (!HasValidImage())
+    }
+    if (!HasValidImage()) {
         GTEST_SKIP() << "Test image missing";
+    }
 
     ASSERT_TRUE(net_.configure(config_).has_value());
 
     auto image_opt = LoadTestImage();
-    if (!image_opt)
+    if (!image_opt) {
         GTEST_SKIP() << "Failed to read image";
+    }
 
-    auto promise = std::make_shared<std::promise<void>>();
-    auto future  = promise->get_future();
+    using ResultType = std::expected<std::vector<Ball2D>, std::string>;
+    auto promise     = std::make_shared<std::promise<ResultType>>();
+    auto future      = promise->get_future();
 
-    net_.async_infer(*image_opt, [promise](auto result) {
-        if (result.has_value()) {
-            OpenVinoNetTest::ValidateDetections(result.value(), kExpectedDetections);
-        } else {
-            ADD_FAILURE() << "Async inference failed: " << result.error();
-        }
-        promise->set_value();
-    });
+    net_.async_infer(*image_opt, [promise](auto result) { promise->set_value(std::move(result)); });
 
     ASSERT_EQ(future.wait_for(std::chrono::seconds(5)), std::future_status::ready) << "Async "
                                                                                       "inference "
                                                                                       "timed out!";
+
+    auto result = future.get();
+    if (result.has_value()) {
+        ValidateDetections(result.value(), kExpectedDetections);
+    } else {
+        ADD_FAILURE() << "Async inference failed: " << result.error();
+    }
 }

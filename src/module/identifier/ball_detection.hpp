@@ -13,7 +13,7 @@
 namespace pingpong_tracker::identifier {
 
 class BallDetection {
-    RMCS_PIMPL_DEFINITION(BallDetection)
+    PINGPONG_TRACKER_PIMPL_DEFINITION(BallDetection)
 
 public:
     BallDetection();

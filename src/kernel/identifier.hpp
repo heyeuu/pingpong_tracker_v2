@@ -13,7 +13,7 @@
 namespace pingpong_tracker::kernel {
 
 class Identifier {
-    RMCS_PIMPL_DEFINITION(Identifier)
+    PINGPONG_TRACKER_PIMPL_DEFINITION(Identifier)
 
 public:
     Identifier();
