@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <future>
+#include <memory>
 #include <numbers>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -40,10 +41,10 @@ auto ComputeCircleIoU(const Point2D& c1, double r1, const T& c2, double r2) -> d
     const auto r1_sq = r1 * r1;
     const auto r2_sq = r2 * r2;
 
-    const auto clamp = [](double v, double lo, double hi) { return std::max(lo, std::min(v, hi)); };
-
-    const auto angle1 = 2.0 * std::acos(clamp((r1_sq + d * d - r2_sq) / (2.0 * r1 * d), -1.0, 1.0));
-    const auto angle2 = 2.0 * std::acos(clamp((r2_sq + d * d - r1_sq) / (2.0 * r2 * d), -1.0, 1.0));
+    const auto angle1 =
+        2.0 * std::acos(std::clamp((r1_sq + d * d - r2_sq) / (2.0 * r1 * d), -1.0, 1.0));
+    const auto angle2 =
+        2.0 * std::acos(std::clamp((r2_sq + d * d - r1_sq) / (2.0 * r2 * d), -1.0, 1.0));
 
     const auto intersection =
         0.5 * r1_sq * (angle1 - std::sin(angle1)) + 0.5 * r2_sq * (angle2 - std::sin(angle2));
@@ -57,6 +58,8 @@ struct ExpectedDetection {
     double radius;
     double min_confidence;
 };
+
+const auto kExpectedDetections = std::vector<ExpectedDetection>{{{184.0, 349.0}, 6.0, 0.9}};
 
 }  // namespace
 
@@ -102,9 +105,9 @@ protected:
         return img;
     }
 
-    void ValidateDetections(const std::vector<Ball2D>& actual,
-                            const std::vector<ExpectedDetection>& expected_list) {
-        ASSERT_FALSE(actual.empty()) << "Inference returned no detections!";
+    static void ValidateDetections(const std::vector<Ball2D>& actual,
+                                   const std::vector<ExpectedDetection>& expected_list) {
+        EXPECT_FALSE(actual.empty()) << "Inference returned no detections!";
 
         for (const auto& expected : expected_list) {
             auto max_iou = 0.0;
@@ -175,9 +178,7 @@ TEST_F(OpenVinoNetTest, SyncInferSuccessWithValidImage) {
     auto result = net_.sync_infer(*image_opt);
     ASSERT_TRUE(result.has_value());
 
-    const auto ground_truth = std::vector<ExpectedDetection>{{{184.0, 349.0}, 6.0, 0.9}};
-
-    ValidateDetections(result.value(), ground_truth);
+    ValidateDetections(result.value(), kExpectedDetections);
 }
 
 TEST_F(OpenVinoNetTest, AsyncInferSuccessWithValidImage) {
@@ -192,18 +193,16 @@ TEST_F(OpenVinoNetTest, AsyncInferSuccessWithValidImage) {
     if (!image_opt)
         GTEST_SKIP() << "Failed to read image";
 
-    const auto ground_truth = std::vector<ExpectedDetection>{{{184.0, 349.0}, 6.0, 0.9}};
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future  = promise->get_future();
 
-    std::promise<void> promise;
-    auto future = promise.get_future();
-
-    net_.async_infer(*image_opt, [&](auto result) {
+    net_.async_infer(*image_opt, [promise](auto result) {
         if (result.has_value()) {
-            ValidateDetections(result.value(), ground_truth);
+            OpenVinoNetTest::ValidateDetections(result.value(), kExpectedDetections);
         } else {
             ADD_FAILURE() << "Async inference failed: " << result.error();
         }
-        promise.set_value();
+        promise->set_value();
     });
 
     ASSERT_EQ(future.wait_for(std::chrono::seconds(5)), std::future_status::ready) << "Async "

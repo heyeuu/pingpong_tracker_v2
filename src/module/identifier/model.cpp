@@ -232,7 +232,7 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
                 channels        = shape[1];
                 is_channel_last = false;
             }
-        } else if (shape.size() >= 3) {
+        } else if (shape.size() > 3) {
             anchors  = shape[2];
             channels = shape[1];
         } else {
