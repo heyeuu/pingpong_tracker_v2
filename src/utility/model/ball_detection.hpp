@@ -41,6 +41,7 @@ struct BallInferResult {
     }
 
     constexpr static auto length() noexcept -> std::size_t {
+        static_assert(sizeof(BallInferResult) == 3 * sizeof(precision_type), "Layout mismatch");
         return sizeof(BallInferResult) / sizeof(precision_type);
     }
 };

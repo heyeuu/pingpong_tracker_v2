@@ -138,7 +138,6 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
 
         input.model().set_layout(ModelLayout::layout());
 
-        // For real-time process, use this mode
         const auto performance = ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY);
         const auto preprocessed_out = preprocess.build();
         openvino_model =
