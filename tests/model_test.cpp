@@ -83,6 +83,10 @@ TEST_F(OpenVinoNetTest, AsyncInferFailsWithEmptyImage) {
 }
 
 TEST_F(OpenVinoNetTest, ConfigureSuccessWithValidModelPath) {
+    if (const auto model_path = config["model_location"].as<std::string>();
+        !std::filesystem::exists(model_path)) {
+        GTEST_SKIP() << "Model file not found at: " << model_path;
+    }
     auto result = net.configure(config);
     EXPECT_TRUE(result.has_value()) << "Configuration failed: " << result.error();
 }
