@@ -21,6 +21,11 @@ class OpenVinoNet {
 public:
     OpenVinoNet();
     ~OpenVinoNet();
+    OpenVinoNet(const OpenVinoNet&)            = delete;
+    OpenVinoNet& operator=(const OpenVinoNet&) = delete;
+    OpenVinoNet(OpenVinoNet&&) noexcept        = default;
+    OpenVinoNet& operator=(OpenVinoNet&&) noexcept = default;
+
     auto configure(const YAML::Node&) noexcept -> std::expected<void, std::string>;
     auto sync_infer(const Image&) noexcept -> std::optional<std::vector<Ball2D>>;
     auto async_infer(const Image&,

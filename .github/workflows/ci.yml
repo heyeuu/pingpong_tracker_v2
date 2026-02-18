@@ -27,7 +27,7 @@ jobs:
         cd "${SCRIPTS_DIR}"
         bash install_dependencies.sh
 
-    - name: Download tests assets
+    - name: Download test assets
       run: |
         cd "${TEST_DIR}"
         bash download_assets.sh

@@ -21,7 +21,8 @@ struct BallInferResult {
     precision_type confidence{0};
 
     auto unsafe_from(std::span<const precision_type> raw) noexcept -> void {
-        assert(raw.size_bytes() >= sizeof(BallInferResult));
+        assert(raw.size_bytes() >= sizeof(BallInferResult)
+               && "unsafe_from: input buffer too small for BallInferResult");
         static_assert(std::is_trivially_copyable_v<BallInferResult>);
         static_assert(sizeof(BallInferResult) == 3 * sizeof(precision_type), "Layout mismatch");
         std::memcpy(this, raw.data(), sizeof(BallInferResult));

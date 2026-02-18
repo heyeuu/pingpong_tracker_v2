@@ -3,12 +3,15 @@
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
 #include "utility/image/image.details.hpp"
+#include "utility/math/point.hpp"
 
 using namespace pingpong_tracker::identifier;
 using namespace pingpong_tracker;
@@ -118,4 +121,27 @@ TEST_F(OpenVinoNetTest, SyncInferSuccessWithValidImage) {
     // Check that the inference was successful and the result is not empty
     ASSERT_TRUE(result.has_value());
     EXPECT_NE(result.value().size(), 0);  // Expect at least one detection
+
+    // Define ground truth data
+    struct ExpectedDetection {
+        Point2D center;
+        double radius;
+        double min_confidence;
+    };
+
+    // TODO: Populate with actual ground truth for jump.png
+    const auto expected_detections = std::vector<ExpectedDetection>{{{184.0, 349.0}, 6.0, 0.9}};
+
+    const auto& detections = result.value();
+    for (const auto& expected : expected_detections) {
+        const auto it = std::find_if(detections.begin(), detections.end(), [&](const auto& det) {
+            const auto dist =
+                std::hypot(det.center.x - expected.center.x, det.center.y - expected.center.y);
+            return dist <= expected.radius && det.confidence >= expected.min_confidence;
+        });
+
+        EXPECT_NE(it, detections.end())
+            << "Expected detection at (" << expected.center.x << ", " << expected.center.y
+            << ") with radius " << expected.radius << " not found.";
+    }
 }
