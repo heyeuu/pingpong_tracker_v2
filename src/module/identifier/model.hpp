@@ -21,9 +21,10 @@ class OpenVinoNet {
 public:
     OpenVinoNet();
     ~OpenVinoNet();
-    OpenVinoNet(const OpenVinoNet&)            = delete;
-    OpenVinoNet& operator=(const OpenVinoNet&) = delete;
-    OpenVinoNet(OpenVinoNet&&) noexcept        = default;
+
+    OpenVinoNet(const OpenVinoNet&)                = delete;
+    OpenVinoNet& operator=(const OpenVinoNet&)     = delete;
+    OpenVinoNet(OpenVinoNet&&) noexcept            = default;
     OpenVinoNet& operator=(OpenVinoNet&&) noexcept = default;
 
     auto configure(const YAML::Node&) noexcept -> std::expected<void, std::string>;
@@ -35,14 +36,17 @@ public:
     struct AsyncResult final {
         using handle_type = std::coroutine_handle<>;
         OpenVinoNet& network;
-        const Image& readonly;
+        Image image;
         std::expected<std::vector<Ball2D>, std::string> result{std::unexpected{"Nothing here"}};
         auto await_resume() noexcept {
             return std::move(result);
         }
         auto await_suspend(handle_type coroutine) noexcept {
-            network.async_infer(readonly, [coroutine, this](auto result) {
+            network.async_infer(image, [coroutine, this](auto result) {
                 this->result = std::move(result);
+                // coroutine.resume() executes on the OpenVINO callback thread.
+                // Callers must ensure thread-safety or marshal resume back to the original/executor
+                // thread.
                 coroutine.resume();
             });
         }
@@ -51,8 +55,8 @@ public:
         }
     };
 
-    auto await_infer(const Image& image) noexcept -> AsyncResult {
-        return AsyncResult{.network = *this, .readonly = image};
+    [[nodiscard]] auto await_infer(Image image) -> AsyncResult {
+        return AsyncResult{.network = *this, .image = std::move(image)};
     }
 };
 

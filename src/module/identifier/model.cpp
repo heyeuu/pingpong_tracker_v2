@@ -47,14 +47,6 @@ struct TensorLayout {
         return ov::Layout{kChars.data()};
     }
 
-    constexpr static auto partial_shape(const Dimensions& dimensions) noexcept {
-        return ov::PartialShape{
-            dimensions.template at<Dim1>(),
-            dimensions.template at<Dim2>(),
-            dimensions.template at<Dim3>(),
-            dimensions.template at<Dim4>(),
-        };
-    }
     constexpr static auto shape(const Dimensions& dimensions) noexcept {
         return ov::Shape{{
             static_cast<std::size_t>(dimensions.template at<Dim1>()),
@@ -350,12 +342,10 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
                     error += e.what();
                 }
                 callback(std::unexpected{error});
-                request.set_callback([](const std::exception_ptr&) {});
-                return;
+            } else {
+                auto result = self->explain_infer_result(request, info);
+                callback(std::move(result));
             }
-
-            auto result = self->explain_infer_result(request, info);
-            callback(std::move(result));
 
             request.set_callback([](const std::exception_ptr&) {});
         });
