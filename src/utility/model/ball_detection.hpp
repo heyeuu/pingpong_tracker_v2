@@ -13,12 +13,12 @@ namespace pingpong_tracker {
 template <typename precision_type = float>
 struct BallInferResult {
     struct Point {
-        precision_type x, y;
+        precision_type x{0}, y{0};
     };
 
-    Point point;
+    Point point{};
 
-    precision_type confidence;
+    precision_type confidence{0};
 
     auto unsafe_from(std::span<const precision_type> raw) noexcept -> void {
         assert(raw.size_bytes() >= sizeof(BallInferResult));

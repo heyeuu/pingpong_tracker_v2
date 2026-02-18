@@ -23,7 +23,8 @@ auto Image::set_timestamp(Clock::time_point timestamp) noexcept -> void {
 
 Image::Image() : pimpl{std::make_unique<Impl>()} {
 }
-
-Image::~Image() noexcept = default;
+Image::~Image() noexcept                  = default;
+Image::Image(Image&&) noexcept            = default;
+Image& Image::operator=(Image&&) noexcept = default;
 
 }  // namespace pingpong_tracker

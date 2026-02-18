@@ -28,7 +28,6 @@ jobs:
         bash install_dependencies.sh
 
     - name: Download tests assets
-      shell: bash
       run: |
         cd "${TEST_DIR}"
         bash download_assets.sh
