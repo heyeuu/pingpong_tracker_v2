@@ -1,13 +1,11 @@
 Language: Cpp
 
-BasedOnStyle: WebKit
+BasedOnStyle: Google
+
+IndentWidth: 4
 
 # 使用空格而不是 Tab
 UseTab: Never
-
-# 缩进 4 字符
-IndentWidth: 4
-TabWidth: 4
 
 # 访问修饰符（public）等靠左对齐
 AccessModifierOffset: -4
@@ -25,7 +23,7 @@ ColumnLimit: 100
 # 是否允许短的函数，语句块等单独一行
 AllowShortIfStatementsOnASingleLine: false
 AllowShortBlocksOnASingleLine: Empty
-AllowShortFunctionsOnASingleLine: All
+AllowShortFunctionsOnASingleLine: None
 
 BreakBeforeBinaryOperators: NonAssignment
 PenaltyBreakAssignment: 2

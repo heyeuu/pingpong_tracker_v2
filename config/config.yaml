@@ -1,0 +1,9 @@
+identifier:
+
+  # openvino infer
+  model_location: "models/yolov8.onnx"
+  infer_device: "AUTO"
+  input_rows: 640
+  input_cols: 640
+  score_threshold: 0.5
+  nms_threshold: 0.45

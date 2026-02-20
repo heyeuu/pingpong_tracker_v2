@@ -16,14 +16,22 @@ jobs:
     env:
       CC: gcc-14
       CXX: g++-14
+      TEST_DIR: ${{ github.workspace }}/tests
+      TEST_ASSETS_ROOT: /tmp/pingpong_tracker
+      SCRIPTS_DIR: ${{ github.workspace }}/scripts
 
     steps:
     - uses: actions/checkout@v4
-
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake build-essential gcc-14 g++-14
+        cd "${SCRIPTS_DIR}"
+        bash install_dependencies.sh
+
+    - name: Download test assets
+      run: |
+        cd "${TEST_DIR}"
+        bash download_assets.sh
+
 
     - name: Configure CMake
       run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
