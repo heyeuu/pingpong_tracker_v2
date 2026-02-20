@@ -79,7 +79,9 @@ if(BUILD_TESTING)
       URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
       DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    if(MSVC)
+        set(gtest_force_shared_crt ON CACHE BOOL "")
+    endif()
     FetchContent_MakeAvailable(googletest)
     
     add_subdirectory(tests)

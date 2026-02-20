@@ -15,7 +15,6 @@ Checks: >
   -cppcoreguidelines-pro-type-vararg,
   -cppcoreguidelines-special-member-functions,
   -misc-non-private-member-variables-in-classes,
-  -cppcoreguidelines-avoid-const-or-ref-data-members,
   -google-readability-braces-around-statements
 
 WarningsAsErrors: 'bugprone-*,google-*,performance-*'
