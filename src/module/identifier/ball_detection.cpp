@@ -11,7 +11,8 @@ struct BallDetection::Impl {
         return openvino_net.configure(yaml);
     }
 
-    auto sync_detect(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
+    auto sync_detect(const Image& image) noexcept
+        -> std::expected<std::vector<Ball2D>, std::string> {
         return openvino_net.sync_infer(image);
     }
 };
@@ -19,14 +20,17 @@ struct BallDetection::Impl {
 BallDetection::BallDetection() : pimpl{std::make_unique<Impl>()} {
 }
 
-BallDetection::~BallDetection() noexcept = default;
+BallDetection::~BallDetection() noexcept                          = default;
+BallDetection::BallDetection(BallDetection&&) noexcept            = default;
+BallDetection& BallDetection::operator=(BallDetection&&) noexcept = default;
 
 auto BallDetection::initialize(const YAML::Node& yaml) noexcept
     -> std::expected<void, std::string> {
     return pimpl->initialize(yaml);
 }
 
-auto BallDetection::sync_detect(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
+auto BallDetection::sync_detect(const Image& image) noexcept
+    -> std::expected<std::vector<Ball2D>, std::string> {
     return pimpl->sync_detect(image);
 }
 

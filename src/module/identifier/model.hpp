@@ -28,7 +28,7 @@ public:
     OpenVinoNet& operator=(OpenVinoNet&&) noexcept = default;
 
     auto configure(const YAML::Node&) noexcept -> std::expected<void, std::string>;
-    auto sync_infer(const Image&) noexcept -> std::optional<std::vector<Ball2D>>;
+    auto sync_infer(const Image&) noexcept -> std::expected<std::vector<Ball2D>, std::string>;
     auto async_infer(const Image&,
                      std::function<void(std::expected<std::vector<Ball2D>, std::string>)>) noexcept
         -> void;

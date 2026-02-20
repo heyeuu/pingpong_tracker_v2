@@ -296,10 +296,10 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
         return final_result;
     }
 
-    auto sync_infer(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
+    auto sync_infer(const Image& image) noexcept -> Result {
         auto result = generate_openvino_request(image);
         if (!result.has_value()) {
-            return std::nullopt;
+            return std::unexpected{result.error()};
         }
 
         auto [request, info] = std::move(result.value());
@@ -361,7 +361,8 @@ auto OpenVinoNet::configure(const YAML::Node& yaml) noexcept -> std::expected<vo
     return pimpl->configure(yaml);
 }
 
-auto OpenVinoNet::sync_infer(const Image& image) noexcept -> std::optional<std::vector<Ball2D>> {
+auto OpenVinoNet::sync_infer(const Image& image) noexcept
+    -> std::expected<std::vector<Ball2D>, std::string> {
     return pimpl->sync_infer(image);
 }
 

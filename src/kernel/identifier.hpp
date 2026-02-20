@@ -19,7 +19,7 @@ public:
     Identifier();
     auto initialize(const YAML::Node&) noexcept -> std::expected<void, std::string>;
 
-    auto sync_identify(const Image&) noexcept -> std::optional<std::vector<Ball2D>>;
+    auto sync_identify(const Image&) noexcept -> std::expected<std::vector<Ball2D>, std::string>;
 };
 
 }  // namespace pingpong_tracker::kernel

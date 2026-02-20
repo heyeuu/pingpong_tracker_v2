@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.24)
 project(pingpong_tracker)
 
 # --- 基础配置 ---
@@ -58,8 +58,6 @@ target_link_libraries(
     ${PROJECT_NAME}_kernel
     PUBLIC
     ${PROJECT_NAME}_module
-    ${OpenCV_LIBS}
-    yaml-cpp::yaml-cpp
 )
 
 # --- 运行时目标: Runtime ---

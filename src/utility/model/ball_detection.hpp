@@ -34,7 +34,8 @@ struct BallInferResult {
     }
 
     template <typename T = Point2D>
-    [[nodiscard]] auto to_point2d() const noexcept -> T {
+    [[nodiscard]] auto to_point2d() const
+        noexcept(std::is_nothrow_constructible_v<T, precision_type, precision_type>) -> T {
         static_assert(std::is_constructible_v<T, precision_type, precision_type>,
                       "T must be constructible from precision_type");
         return T{point.x, point.y};

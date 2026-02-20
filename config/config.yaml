@@ -2,7 +2,7 @@ identifier:
   binarization_threshold: 0.5
 
   # openvino infer
-  model_location: "models/best.onnx"
+  model_location: "models/yolov8.onnx"
   infer_device: "AUTO"
   use_roi_segment: false
   use_corner_correction: false
