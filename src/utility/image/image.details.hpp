@@ -8,21 +8,21 @@ namespace pingpong_tracker {
 
 struct Image::Details {
     auto set_mat(cv::Mat mat) noexcept -> void {
-        this->mat = std::move(mat);
+        mat_ = std::move(mat);
     }
     [[nodiscard]] auto get_mat() const noexcept -> const cv::Mat& {
-        return mat;
+        return mat_;
     }
 
     [[nodiscard]] auto get_cols() const noexcept {
-        return mat.cols;
+        return mat_.cols;
     }
     [[nodiscard]] auto get_rows() const noexcept {
-        return mat.rows;
+        return mat_.rows;
     }
 
 private:
-    cv::Mat mat;
+    cv::Mat mat_;
 };
 
 }  // namespace pingpong_tracker

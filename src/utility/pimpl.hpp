@@ -12,5 +12,5 @@ public:                                          \
                                                  \
 private:                                         \
     struct Impl;                                 \
-    std::unique_ptr<Impl> pimpl;
+    std::unique_ptr<Impl> pimpl_;
 // NOLINTEND(cppcoreguidelines-macro-usage, bugprone-macro-parentheses)

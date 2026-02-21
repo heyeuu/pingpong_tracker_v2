@@ -1,6 +1,6 @@
-#include "image.details.hpp"
-
 #include <cassert>
+
+#include "image.details.hpp"
 
 namespace pingpong_tracker {
 
@@ -10,24 +10,24 @@ struct Image::Impl {
 };
 
 auto Image::details() noexcept -> Details& {
-    assert(pimpl && "Image accessed after move");
-    return pimpl->details;
+    assert(pimpl_ && "Image accessed after move");
+    return pimpl_->details;
 }
 auto Image::details() const noexcept -> const Details& {
-    assert(pimpl && "Image accessed after move");
-    return pimpl->details;
+    assert(pimpl_ && "Image accessed after move");
+    return pimpl_->details;
 }
 
 auto Image::get_timestamp() const noexcept -> Clock::time_point {
-    assert(pimpl && "Image accessed after move");
-    return pimpl->timestamp;
+    assert(pimpl_ && "Image accessed after move");
+    return pimpl_->timestamp;
 }
 auto Image::set_timestamp(Clock::time_point timestamp) noexcept -> void {
-    assert(pimpl && "Image accessed after move");
-    pimpl->timestamp = timestamp;
+    assert(pimpl_ && "Image accessed after move");
+    pimpl_->timestamp = timestamp;
 }
 
-Image::Image() : pimpl{std::make_unique<Impl>()} {
+Image::Image() : pimpl_{std::make_unique<Impl>()} {
 }
 Image::~Image() noexcept                  = default;
 Image::Image(Image&&) noexcept            = default;
