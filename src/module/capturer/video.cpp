@@ -9,7 +9,7 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/videoio.hpp>
 
-using namespace rmcs::module;
+using namespace pingpong_tracker::module;
 
 struct VideoCapturer::Impl final {
     explicit Impl() noexcept = default;

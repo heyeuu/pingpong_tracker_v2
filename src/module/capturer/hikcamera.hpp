@@ -4,9 +4,8 @@
 #include "utility/image/image.hpp"
 #include "utility/serializable.hpp"
 
-namespace rmcs::cap {
+namespace pingpong_tracker::cap {
 
-using pingpong_tracker::Image;
 namespace util = pingpong_tracker::util;
 
 using NormalResult = std::expected<void, std::string>;
@@ -43,4 +42,4 @@ struct Hikcamera : public hikcamera::Camera {
     }
 };
 
-}  // namespace rmcs::cap
+}  // namespace pingpong_tracker::cap

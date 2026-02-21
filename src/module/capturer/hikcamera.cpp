@@ -1,7 +1,7 @@
 #include "hikcamera.hpp"
 #include "utility/image/image.details.hpp"
 
-namespace rmcs::cap {
+namespace pingpong_tracker::cap {
 
 auto Hikcamera::wait_image() noexcept -> ImageResult {
     using pingpong_tracker::Image;

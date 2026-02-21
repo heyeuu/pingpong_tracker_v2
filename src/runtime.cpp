@@ -1,6 +1,5 @@
-#include <iostream>
+#include "kernel/capturer.hpp"
 
 int main() {
-    std::cout << "Hello world!" << '\n';
     return 0;
 }

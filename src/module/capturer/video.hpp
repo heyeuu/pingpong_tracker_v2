@@ -3,7 +3,7 @@
 #include <chrono>
 #include <opencv2/core/mat.hpp>
 
-namespace rmcs::module {
+namespace pingpong_tracker::module {
 
 class VideoCapturer {
     PINGPONG_TRACKER_PIMPL_DEFINITION(VideoCapturer)
@@ -18,4 +18,4 @@ public:
     auto set_framerate(double hz) noexcept;
 };
 
-} // namespace rmcs::capturer
+} // namespace pingpong_tracker::capturer

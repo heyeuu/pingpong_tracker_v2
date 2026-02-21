@@ -7,7 +7,7 @@
 
 #include "utility/image/image.details.hpp"
 
-using namespace rmcs::cap;
+using namespace pingpong_tracker::cap;
 
 struct LocalVideo::Impl {
     Config config;

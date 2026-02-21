@@ -4,7 +4,7 @@
 #include <expected>
 #include <yaml-cpp/yaml.h>
 
-namespace rmcs::cap {
+namespace pingpong_tracker::cap {
 
 using pingpong_tracker::Image;
 namespace util = pingpong_tracker::util;
@@ -22,15 +22,15 @@ private:
 
 public:
     struct Config : ConfigDetail, util::SerializableMixin {
-        constexpr static std::tuple metas {
-            &ConfigDetail::location,
-            "location", // 视频文件路径
-            &ConfigDetail::frame_rate,
-            "frame_rate", // 帧率
-            &ConfigDetail::loop_play,
-            "loop_play", // 循环播放
-            &ConfigDetail::allow_skipping,
-            "allow_skipping" // 允许跳帧以保证实时性
+        constexpr static auto kMetas = std::tuple {
+            "location",
+            &ConfigDetail::location, // 视频文件路径
+            "frame_rate",
+            &ConfigDetail::frame_rate, // 帧率
+            "loop_play",
+            &ConfigDetail::loop_play, // 循环播放
+            "allow_skipping",
+            &ConfigDetail::allow_skipping // 允许跳帧以保证实时性
         };
     };
 

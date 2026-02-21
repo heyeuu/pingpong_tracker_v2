@@ -4,7 +4,7 @@
 #include <expected>
 #include <yaml-cpp/yaml.h>
 
-namespace rmcs::cap {
+namespace pingpong_tracker::cap {
 
 using NormalResult = std::expected<void, std::string>;
 using ImageResult  = std::expected<std::unique_ptr<Image>, std::string>;

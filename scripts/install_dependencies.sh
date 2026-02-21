@@ -4,7 +4,7 @@ set -o pipefail
 
 # Install basic build tools
 sudo apt-get update
-sudo apt-get install -y --no-install-recommends cmake build-essential gcc-14 g++-14 yq wget gnupg libeigen3-dev libopencv-dev libyaml-cpp-dev
+sudo apt-get install -y --no-install-recommends cmake build-essential gcc-14 g++-14 yq wget gnupg libeigen3-dev libopencv-dev libyaml-cpp-dev libspdlog-dev
 
 # Install OpenVINO
 wget -qO /tmp/intel-openvino.pub https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
