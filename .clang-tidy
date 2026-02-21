@@ -1,36 +1,88 @@
 Checks: >
   -*,
+  # 基础逻辑与 Bug 防御
   bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  
+  # Google 规范核心
   google-*,
-  misc-*,
-  modernize-*,
-  performance-*,
-  readability-*,
-  cppcoreguidelines-*,
   -google-runtime-references,
+  -google-readability-braces-around-statements,
+  -google-readability-todo,
+  
+  # 现代 C++ 转化
+  modernize-*,
   -modernize-use-trailing-return-type,
+  
+  # 代码可读性与风格统一
+  readability-*,
   -readability-magic-numbers,
   -readability-identifier-length,
-  -bugprone-easily-swappable-parameters,
+  -readability-braces-around-statements,
+  -readability-redundant-access-specifiers,
+  
+  # 性能优化建议
+  performance-*,
+  
+  # 多线程并发安全
+  concurrency-*,
+  
+  # C++ 核心指南
+  cppcoreguidelines-*,
   -cppcoreguidelines-pro-type-vararg,
   -cppcoreguidelines-special-member-functions,
-  -misc-non-private-member-variables-in-classes,
-  -google-readability-braces-around-statements
+  -cppcoreguidelines-pro-type-member-init,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic
 
-WarningsAsErrors: 'bugprone-*,google-*,performance-*'
+# 将核心风险项视为编译错误，强制修改
+WarningsAsErrors: 'bugprone-*,google-*,performance-*,concurrency-*,modernize-use-override'
 
+# 过滤第三方库的头文件
 HeaderFilterRegex: '^(src|include)/.*'
 
 CheckOptions:
-  - key:             readability-identifier-naming.VariableCase
-    value:           lower_case
+  # === 1. 命名规范 (Naming Conventions) ===
+  
+  # 类名、结构体名：PascalCase
+  - key:             readability-identifier-naming.ClassCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.StructCase
+    value:           CamelCase
+
+  # 函数名：lower_case (带下划线)
   - key:             readability-identifier-naming.FunctionCase
     value:           lower_case
+
+  # 普通变量：lower_case 
+  - key:             readability-identifier-naming.VariableCase
+    value:           lower_case
+
+  # 类私有成员：lower_case + 结尾下划线 
+  - key:             readability-identifier-naming.ClassMemberCase
+    value:           lower_case
+  - key:             readability-identifier-naming.ClassMemberSuffix
+    value:           _
+
+  # 常量：k + PascalCase 
+  - key:             readability-identifier-naming.GlobalConstantCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.GlobalConstantPrefix
+    value:           k
   - key:             readability-identifier-naming.ClassConstantCase
     value:           CamelCase
   - key:             readability-identifier-naming.ClassConstantPrefix
     value:           k
-  - key:             readability-identifier-naming.ConstexprVariableCase
-    value:           CamelCase
-  - key:             readability-identifier-naming.ConstexprVariablePrefix
-    value:           k
+
+  # 命名空间：全部小写
+  - key:             readability-identifier-naming.NamespaceCase
+    value:           lower_case
+
+  # 移动语义安全：检查 move 后的对象是否被再次使用（深度检查派生类）
+  - key:             bugprone-use-after-move.CheckDerivedClasses
+    value:           true
+
+  # 构造函数显式化：防止意外的隐式转换
+  - key:             google-explicit-constructor.IgnoreOneArgumentConstructors
+    value:           false
