@@ -19,6 +19,8 @@ add_compile_options(
 find_package(OpenCV REQUIRED)
 find_package(OpenVINO REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(fmt REQUIRED)
 
 # --- 源码搜集 ---
 file(GLOB_RECURSE PINGPONG_TRACKER_KERNEL
@@ -50,6 +52,11 @@ target_link_libraries(
     openvino::runtime
     ${OpenCV_LIBS}
     hikcamera
+    spdlog::spdlog
+    fmt::fmt
+)
+target_compile_definitions(${PROJECT_NAME}_module PRIVATE
+    PINGPONG_TRACKER_SOURCE_CONFIG_DIR="${PROJECT_SOURCE_DIR}/config"
 )
 
 # --- 核心目标: Kernel ---

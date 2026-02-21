@@ -1,7 +1,8 @@
 #include "capturer.hpp"
 
-#include <thread>
 #include <spdlog/spdlog.h>
+
+#include <thread>
 
 #include "module/capturer/common.hpp"
 #include "module/capturer/hikcamera.hpp"
