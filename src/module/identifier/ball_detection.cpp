@@ -17,7 +17,7 @@ struct BallDetection::Impl {
     }
 };
 
-BallDetection::BallDetection() : pimpl{std::make_unique<Impl>()} {
+BallDetection::BallDetection() : pimpl_{std::make_unique<Impl>()} {
 }
 
 BallDetection::~BallDetection() noexcept                          = default;
@@ -26,12 +26,12 @@ BallDetection& BallDetection::operator=(BallDetection&&) noexcept = default;
 
 auto BallDetection::initialize(const YAML::Node& yaml) noexcept
     -> std::expected<void, std::string> {
-    return pimpl->initialize(yaml);
+    return pimpl_->initialize(yaml);
 }
 
 auto BallDetection::sync_detect(const Image& image) noexcept
     -> std::expected<std::vector<Ball2D>, std::string> {
-    return pimpl->sync_detect(image);
+    return pimpl_->sync_detect(image);
 }
 
 }  // namespace pingpong_tracker::identifier

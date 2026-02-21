@@ -17,7 +17,7 @@ struct Identifier::Impl {
     }
 };
 
-Identifier::Identifier() : pimpl{std::make_unique<Impl>()} {
+Identifier::Identifier() : pimpl_{std::make_unique<Impl>()} {
 }
 
 Identifier::~Identifier() noexcept                       = default;
@@ -25,12 +25,12 @@ Identifier::Identifier(Identifier&&) noexcept            = default;
 Identifier& Identifier::operator=(Identifier&&) noexcept = default;
 
 auto Identifier::initialize(const YAML::Node& yaml) noexcept -> std::expected<void, std::string> {
-    return pimpl->initialize(yaml);
+    return pimpl_->initialize(yaml);
 }
 
 auto Identifier::sync_identify(const Image& src) noexcept
     -> std::expected<std::vector<Ball2D>, std::string> {
-    return pimpl->identify(src);
+    return pimpl_->identify(src);
 }
 
 }  // namespace pingpong_tracker::kernel

@@ -18,21 +18,21 @@ namespace util = pingpong_tracker::util;
 
 using dimension_type = ov::Dimension::value_type;
 struct Dimensions {
-    dimension_type N = 1;
-    dimension_type C = 3;
-    dimension_type W = 0;
-    dimension_type H = 0;
+    dimension_type n = 1;
+    dimension_type c = 3;
+    dimension_type w = 0;
+    dimension_type h = 0;
 
     template <char D>
     [[nodiscard]] constexpr auto at() const noexcept {
         if constexpr (D == 'N') {
-            return N;
+            return n;
         } else if constexpr (D == 'C') {
-            return C;
+            return c;
         } else if constexpr (D == 'W') {
-            return W;
+            return w;
         } else if constexpr (D == 'H') {
-            return H;
+            return h;
         } else {
             static_assert(false, "Wrong dimension char");
         }
@@ -91,7 +91,7 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
         float score_threshold = 0.5F;
         float nms_threshold   = 0.5F;
 
-        constexpr static std::tuple metas{
+        constexpr static std::tuple kMetas{
             // clang-format off
             "model_location",           &Config::model_location,
             "infer_device",             &Config::infer_device,
@@ -121,8 +121,8 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
         auto preprocess = ov::preprocess::PrePostProcessor{origin_model};
 
         const auto dimensions = Dimensions{
-            .W = static_cast<dimension_type>(config.input_cols),
-            .H = static_cast<dimension_type>(config.input_rows),
+            .w = static_cast<dimension_type>(config.input_cols),
+            .h = static_cast<dimension_type>(config.input_rows),
         };
 
         auto& input = preprocess.input();
@@ -178,8 +178,8 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
         const auto pad_right  = pad_w - pad_left;
 
         const auto dimensions = Dimensions{
-            .W = static_cast<dimension_type>(config.input_cols),
-            .H = static_cast<dimension_type>(config.input_rows),
+            .w = static_cast<dimension_type>(config.input_cols),
+            .h = static_cast<dimension_type>(config.input_rows),
         };
 
         auto input_tensor = ov::Tensor(ov::element::u8, InputLayout::shape(dimensions));
@@ -259,8 +259,8 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
                 const auto w  = data[offset + (ChannelIndex::kW * stride)];
                 const auto h  = data[offset + (ChannelIndex::kH * stride)];
 
-                const auto x = static_cast<int>(cx - w * 0.5f);
-                const auto y = static_cast<int>(cy - h * 0.5f);
+                const auto x = static_cast<int>(cx - w * 0.5F);
+                const auto y = static_cast<int>(cy - h * 0.5F);
 
                 boxes.emplace_back(x, y, static_cast<int>(w), static_cast<int>(h));
                 scores.push_back(score);
@@ -352,25 +352,25 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
     }
 };
 
-OpenVinoNet::OpenVinoNet() : pimpl{std::make_shared<Impl>()} {
+OpenVinoNet::OpenVinoNet() : pimpl_{std::make_shared<Impl>()} {
 }
 
 OpenVinoNet::~OpenVinoNet() = default;
 
 auto OpenVinoNet::configure(const YAML::Node& yaml) noexcept -> std::expected<void, std::string> {
-    return pimpl->configure(yaml);
+    return pimpl_->configure(yaml);
 }
 
 auto OpenVinoNet::sync_infer(const Image& image) noexcept
     -> std::expected<std::vector<Ball2D>, std::string> {
-    return pimpl->sync_infer(image);
+    return pimpl_->sync_infer(image);
 }
 
 auto OpenVinoNet::async_infer(
     const Image& image,
     std::function<void(std::expected<std::vector<Ball2D>, std::string>)> callback) noexcept
     -> void {
-    pimpl->async_infer(image, std::move(callback));
+    pimpl_->async_infer(image, std::move(callback));
 }
 
 }  // namespace pingpong_tracker::identifier

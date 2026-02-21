@@ -24,9 +24,9 @@ concept yaml_cpp_trait = requires(T node) {
 };
 
 template <typename T>
-concept serializable_metas_trait = requires { typename std::tuple_size<decltype(T::metas)>::type; }
-                                   && (std::tuple_size_v<decltype(T::metas)> != 0)
-                                   && (std::tuple_size_v<decltype(T::metas)> % 2 == 0);
+concept serializable_metas_trait = requires { typename std::tuple_size<decltype(T::kMetas)>::type; }
+                                   && (std::tuple_size_v<decltype(T::kMetas)> != 0)
+                                   && (std::tuple_size_v<decltype(T::kMetas)> % 2 == 0);
 
 template <class Node>
 struct NodeAdapter {
@@ -177,21 +177,21 @@ struct SerializableMixin {
     auto serialize(this T& self, std::string_view prefix, auto& source)
         -> std::expected<void, std::string> {
         static_assert(details::serializable_metas_trait<T>,
-                      "SerializableMixin T must have a valid metas tuple");
+                      "SerializableMixin T must have a valid kMetas tuple");
 
-        auto s = self.make_serializable(self.metas);
+        auto s = self.make_serializable(self.kMetas);
         return s.serialize(prefix, source, self);
     }
 
     template <class T>
     auto serialize(this T& self, auto& source) {
         static_assert(details::serializable_metas_trait<T>,
-                      "SerializableMixin T must have a valid metas tuple");
+                      "SerializableMixin T must have a valid kMetas tuple");
         return self.serialize("", source);
     }
 
     auto printable(this auto& self) {
-        auto s = self.make_serializable(self.metas);
+        auto s = self.make_serializable(self.kMetas);
         return s.make_printable_from(self);
     }
 };

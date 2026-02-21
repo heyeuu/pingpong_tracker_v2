@@ -15,7 +15,7 @@ struct T : SerializableMixin {
     double mem3 = 0.0;
     std::vector<double> mem4{};
 
-    static constexpr std::tuple metas{
+    static constexpr std::tuple kMetas{
         "mem1", &T::mem1, "mem2", &T::mem2, "mem3", &T::mem3, "mem4", &T::mem4,
     };
 };

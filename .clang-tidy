@@ -10,7 +10,7 @@ Checks: >
   -google-readability-braces-around-statements,
   -google-readability-todo,
   
-  # 现代 C++ 转化
+  # 现代 C++ 转化 (C++11 到 C++23)
   modernize-*,
   -modernize-use-trailing-return-type,
   
@@ -21,13 +21,13 @@ Checks: >
   -readability-braces-around-statements,
   -readability-redundant-access-specifiers,
   
-  # 性能优化建议
+  # 性能优化建议 (针对高频计算与大对象传递)
   performance-*,
   
   # 多线程并发安全
   concurrency-*,
   
-  # C++ 核心指南
+  # C++ 核心指南 (Stroustrup 推荐)
   cppcoreguidelines-*,
   -cppcoreguidelines-pro-type-vararg,
   -cppcoreguidelines-special-member-functions,
@@ -36,22 +36,20 @@ Checks: >
   -cppcoreguidelines-macro-usage,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic
 
-# 将核心风险项视为编译错误，强制修改
+# 将核心风险项视为编译错误，强制修改 (加入了并发安全)
 WarningsAsErrors: 'bugprone-*,google-*,performance-*,concurrency-*,modernize-use-override'
 
-# 过滤第三方库的头文件
+# 过滤第三方库的头文件，只检查自己的代码
 HeaderFilterRegex: '^(src|include)/.*'
 
 CheckOptions:
-  # === 1. 命名规范 (Naming Conventions) ===
-  
   # 类名、结构体名：PascalCase
   - key:             readability-identifier-naming.ClassCase
     value:           CamelCase
   - key:             readability-identifier-naming.StructCase
     value:           CamelCase
 
-  # 函数名：lower_case (带下划线)
+  # 函数名：严格使用 lower_case
   - key:             readability-identifier-naming.FunctionCase
     value:           lower_case
 
@@ -59,10 +57,22 @@ CheckOptions:
   - key:             readability-identifier-naming.VariableCase
     value:           lower_case
 
-  # 类私有成员：lower_case + 结尾下划线 
-  - key:             readability-identifier-naming.ClassMemberCase
+  # 公开成员：不带下划线
+  - key:             readability-identifier-naming.PublicMemberCase
     value:           lower_case
-  - key:             readability-identifier-naming.ClassMemberSuffix
+  - key:             readability-identifier-naming.PublicMemberSuffix
+    value:           ''
+
+  # 私有成员：带下划线
+  - key:             readability-identifier-naming.PrivateMemberCase
+    value:           lower_case
+  - key:             readability-identifier-naming.PrivateMemberSuffix
+    value:           _
+
+  # 受保护成员：带下划线
+  - key:             readability-identifier-naming.ProtectedMemberCase
+    value:           lower_case
+  - key:             readability-identifier-naming.ProtectedMemberSuffix
     value:           _
 
   # 常量：k + PascalCase 

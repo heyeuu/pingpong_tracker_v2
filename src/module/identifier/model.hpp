@@ -16,7 +16,7 @@ namespace pingpong_tracker::identifier {
 
 class OpenVinoNet {
     struct Impl;
-    std::shared_ptr<Impl> pimpl;
+    std::shared_ptr<Impl> pimpl_;
 
 public:
     OpenVinoNet();
