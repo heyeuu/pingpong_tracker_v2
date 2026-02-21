@@ -89,11 +89,3 @@ CheckOptions:
   # 命名空间：全部小写
   - key:             readability-identifier-naming.NamespaceCase
     value:           lower_case
-
-  # 移动语义安全：检查 move 后的对象是否被再次使用
-  - key:             bugprone-use-after-move.CheckDerivedClasses
-    value:           true
-
-  # 构造函数显式化：防止意外的隐式转换
-  - key:             google-explicit-constructor.IgnoreOneArgumentConstructors
-    value:           false
