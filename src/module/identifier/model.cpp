@@ -1,6 +1,5 @@
 #include "model.hpp"
 
-#include <iostream>
 #include <opencv2/dnn/dnn.hpp>
 #include <opencv2/imgproc.hpp>
 #include <openvino/core/preprocess/pre_post_process.hpp>
@@ -249,17 +248,11 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
         const auto data = std::span<const float>{const_cast<ov::Tensor&>(tensor).data<float>(),
                                                  tensor.get_size()};
 
-        float absolute_max_score = 0.0f;
-
         for (std::size_t i = 0; i < anchors; ++i) {
             const auto offset = is_channel_last ? (i * channels) : i;
             const auto stride = is_channel_last ? 1 : anchors;
 
             const auto score = data[offset + (ChannelIndex::kScore * stride)];
-
-            if (score > absolute_max_score) {
-                absolute_max_score = score;
-            }
 
             if (score > config.score_threshold) {
                 const auto cx = data[offset + (ChannelIndex::kCx * stride)];
@@ -274,8 +267,6 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
                 scores.push_back(score);
             }
         }
-
-        std::cout << "[DEBUG] 本帧 8400 个锚框中的绝对最高分是: " << absolute_max_score << std::endl;
 
         return {std::move(boxes), std::move(scores)};
     }
