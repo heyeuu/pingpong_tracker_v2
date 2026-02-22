@@ -1,7 +1,4 @@
 use_visualization: true
-use_painted_image: true
-is_local_runtime: true
-
 
 capturer:
   show_loss_framerate: false
@@ -25,7 +22,7 @@ capturer:
     fixed_framerate: true
   local_video:
     # 替换为你具体的路径
-    location: "/workspaces/alliance/test_videos/solve_pnp_v2.mp4"
+    location: "/workspaces/alliance/test_videos/pingpong.mp4"
     # double 帧率
     frame_rate: 60
     # bool 是否循环播放
@@ -39,5 +36,5 @@ identifier:
   infer_device: "AUTO"
   input_rows: 640
   input_cols: 640
-  score_threshold: 0.5
+  score_threshold: 0.55
   nms_threshold: 0.45

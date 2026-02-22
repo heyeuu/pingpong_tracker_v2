@@ -56,7 +56,7 @@ target_link_libraries(
     fmt::fmt
 )
 target_compile_definitions(${PROJECT_NAME}_module PRIVATE
-    PINGPONG_TRACKER_SOURCE_CONFIG_DIR="${PROJECT_SOURCE_DIR}/config"
+    PINGPONG_TRACKER_SOURCE="${PROJECT_SOURCE_DIR}"
 )
 
 # --- 核心目标: Kernel ---

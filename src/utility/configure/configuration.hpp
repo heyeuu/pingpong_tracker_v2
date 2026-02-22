@@ -14,9 +14,12 @@ inline auto configuration() {
         auto location = std::filesystem::path{
             Parameters::share_location(),
         };
-        auto path = location / "config.yaml";
+
+        auto path = location / "config/config.yaml";
+
         if (!std::filesystem::exists(path)) {
-            util::panic(std::format("Config file not found: {}", std::filesystem::absolute(path).string()));
+            util::panic(
+                std::format("Config file not found: {}", std::filesystem::absolute(path).string()));
         }
         try {
             return YAML::LoadFile(path.string());
