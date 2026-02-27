@@ -18,14 +18,14 @@ public:
     using duration = std::chrono::milliseconds;
 
     ActionThrottler(duration interval, std::size_t default_quota) noexcept
-        : default_quota_ { default_quota } {
+        : default_quota_{default_quota} {
         metronome_.set_interval(interval);
     }
 
     auto register_action(std::string_view tag, std::optional<std::size_t> quota = std::nullopt)
         -> void {
         auto [it, inserted] =
-            actions_.try_emplace(std::string { tag }, quota.value_or(default_quota_));
+            actions_.try_emplace(std::string{tag}, quota.value_or(default_quota_));
         if (!inserted) {
             it->second.limit = quota.value_or(default_quota_);
             it->second.reset();
@@ -35,10 +35,12 @@ public:
 
     template <std::invocable Fn>
     auto dispatch(std::string_view tag, Fn&& action) -> bool {
-        if (!metronome_.tick()) return false;
+        if (!metronome_.tick())
+            return false;
 
         auto it = actions_.find(tag);
-        if (it == actions_.end()) return false;
+        if (it == actions_.end())
+            return false;
 
         auto& limit = it->second;
         if (limit.tick()) {
@@ -61,7 +63,7 @@ private:
     struct string_hash {
         using is_transparent = void;
         auto operator()(std::string_view sv) const -> std::size_t {
-            return std::hash<std::string_view> {}(sv);
+            return std::hash<std::string_view>{}(sv);
         }
     };
 
@@ -70,4 +72,4 @@ private:
     std::unordered_map<std::string, TimesLimit, string_hash, std::equal_to<>> actions_;
 };
 
-} // namespace rmcs::util
+}  // namespace pingpong_tracker::util

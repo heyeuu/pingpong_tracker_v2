@@ -1,4 +1,5 @@
 use_visualization: true
+use_painted_image: true
 
 capturer:
   show_loss_framerate: false
@@ -22,7 +23,7 @@ capturer:
     fixed_framerate: true
   local_video:
     # 替换为你具体的路径
-    location: "/workspaces/alliance/test_videos/pingpong.mp4"
+    location: "/workspaces/alliance/test_videos/pingpong_v3.mp4"
     # double 帧率
     frame_rate: 60
     # bool 是否循环播放
@@ -34,7 +35,13 @@ identifier:
   # openvino infer
   model_location: "models/yolov8.onnx"
   infer_device: "AUTO"
-  input_rows: 640
-  input_cols: 640
-  score_threshold: 0.55
-  nms_threshold: 0.45
+  input_rows: 800
+  input_cols: 800
+  score_threshold: 0.5
+  nms_threshold: 0.6
+
+visualization:
+  framerate: 60
+  monitor_host: "127.0.0.1"
+  monitor_port: "5000"
+  stream_type: "RTP_JEPG"

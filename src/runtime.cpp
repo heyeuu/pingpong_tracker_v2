@@ -6,9 +6,11 @@
 
 #include "kernel/capturer.hpp"
 #include "kernel/identifier.hpp"
+#include "kernel/visualization.hpp"
 #include "module/debug/action_throttler.hpp"
 #include "module/debug/framerate.hpp"
 #include "utility/configure/configuration.hpp"
+#include "utility/image/ball.hpp"
 #include "utility/panic.hpp"
 #include "utility/singleton/running.hpp"
 
@@ -32,11 +34,13 @@ int main() {
     auto capturer   = kernel::Capturer{};
     auto identifier = kernel::Identifier{};
 
+    auto visualization    = kernel::Visualization{};
     auto action_throttler = util::ActionThrottler{1s, 233};
 
     /// Configure
     auto configuration     = util::configuration();
     auto use_visualization = configuration["use_visualization"].as<bool>();
+    auto use_painted_image = configuration["use_painted_image"].as<bool>();
 
     // CAPTURER
     {
@@ -57,16 +61,12 @@ int main() {
         handle_result("identifier", result);
     }
 
-    auto detect_balls = [&](const auto& image) {
-        auto result = identifier.sync_identify(*image);
-        if (!result) {
-            action_throttler.dispatch("identify_error", [&] {
-                spdlog::warn("Failed to identify balls: {}", result.error());
-            });
-            return typename decltype(result)::value_type{};
-        }
-        return std::move(*result);
-    };
+    // VISUALIZATION
+    if (use_visualization) {
+        auto config = configuration["visualization"];
+        auto result = visualization.initialize(config);
+        handle_result("visualization", result);
+    }
 
     // DEBUG
     {
@@ -75,24 +75,47 @@ int main() {
         action_throttler.register_action("balls_detected", 10);
     }
 
+    auto detect_balls = [&](const auto& image) {
+        auto result = identifier.sync_identify(*image);
+        if (!result) {
+            action_throttler.dispatch("identify_error", [&] {
+                spdlog::warn("Failed to identify balls: {}", result.error());
+            });
+            return typename decltype(result)::value_type{};
+        }
+
+        const auto& balls = *result;
+        if (balls.empty()) {
+            action_throttler.dispatch("no_balls_detected",
+                                      [&] { spdlog::info("Detected {} balls", balls.size()); });
+        } else {
+            action_throttler.dispatch("balls_detected",
+                                      [&] { spdlog::info("Detected {} balls", balls.size()); });
+            action_throttler.reset("no_balls_detected");
+        }
+
+        return std::move(*result);
+    };
+
+    auto visualize_detection = [&](auto& image, const auto& balls_2d) {
+        if (use_painted_image) {
+            for (const auto& ball_2d : balls_2d) {
+                util::draw(image, ball_2d);
+            }
+        }
+
+        if (visualization.initialized()) {
+            visualization.send_image(image);
+        }
+    };
+
     for (;;) {
         if (!util::get_running()) [[unlikely]]
             break;
 
         if (auto image = capturer.fetch_image()) {
             auto balls = detect_balls(image);
-
-            if (use_visualization) {
-                if (balls.empty()) {
-                    action_throttler.dispatch("no_balls_detected", [&] {
-                        spdlog::info("Detected {} balls", balls.size());
-                    });
-                } else {
-                    action_throttler.dispatch(
-                        "balls_detected", [&] { spdlog::info("Detected {} balls", balls.size()); });
-                    action_throttler.reset("no_balls_detected");
-                }
-            }
+            visualize_detection(*image, balls);
 
         } else {
             std::this_thread::sleep_for(1ms);
