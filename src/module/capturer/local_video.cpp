@@ -1,9 +1,8 @@
 #include "local_video.hpp"
 
 #include <filesystem>
-#include <thread>
-
 #include <opencv2/videoio.hpp>
+#include <thread>
 
 #include "utility/image/image.details.hpp"
 
@@ -16,21 +15,21 @@ struct LocalVideo::Impl {
 
     std::optional<cv::VideoCapture> capturer;
 
-    std::chrono::nanoseconds interval_duration { 0 };
-    Clock::time_point last_read_time { Clock::now() };
+    std::chrono::nanoseconds interval_duration{0};
+    Clock::time_point last_read_time{Clock::now()};
 
     auto set_framerate_interval(double hz) noexcept -> void {
         if (hz > 0) {
             interval_duration =
                 std::chrono::nanoseconds(static_cast<long long>(std::round(1.0 / hz * 1e9)));
         } else {
-            interval_duration = std::chrono::nanoseconds { 0 };
+            interval_duration = std::chrono::nanoseconds{0};
         }
     };
 
     auto configure(Config const& _config) -> std::expected<void, std::string> {
         if (_config.location.empty() || !std::filesystem::exists(_config.location)) {
-            return std::unexpected { "Local video is not found or location is empty" };
+            return std::unexpected{"Local video is not found or location is empty"};
         }
 
         config = _config;
@@ -38,9 +37,9 @@ struct LocalVideo::Impl {
         try {
             capturer.emplace(config.location);
         } catch (std::exception const& e) {
-            return std::unexpected { "Failed to construct VideoCapture: " + std::string(e.what()) };
+            return std::unexpected{"Failed to construct VideoCapture: " + std::string(e.what())};
         } catch (...) {
-            return std::unexpected { "Failed to construct VideoCapture due to an unknown error." };
+            return std::unexpected{"Failed to construct VideoCapture due to an unknown error."};
         }
 
         double source_fps = capturer->get(cv::CAP_PROP_FPS);
@@ -57,20 +56,24 @@ struct LocalVideo::Impl {
         return {};
     }
 
-    auto connect() -> std::expected<void, std::string> { return configure(config); }
+    auto connect() -> std::expected<void, std::string> {
+        return configure(config);
+    }
 
-    auto connected() const noexcept -> bool { return capturer.has_value() && capturer->isOpened(); }
+    auto connected() const noexcept -> bool {
+        return capturer.has_value() && capturer->isOpened();
+    }
 
     auto disconnect() noexcept -> void {
         if (capturer.has_value()) {
             capturer.reset();
         }
-        interval_duration = std::chrono::nanoseconds { 0 };
+        interval_duration = std::chrono::nanoseconds{0};
     }
 
     auto wait_image() noexcept -> std::expected<std::unique_ptr<Image>, std::string> {
         if (!capturer.has_value() || !capturer->isOpened()) {
-            return std::unexpected { "Video stream is not opened." };
+            return std::unexpected{"Video stream is not opened."};
         }
 
         const auto time_before_read        = Clock::now();
@@ -84,23 +87,24 @@ struct LocalVideo::Impl {
             last_read_time = config.allow_skipping ? Clock::now() : next_read_time_expected;
         }
 
-        auto frame = cv::Mat {};
+        auto frame = cv::Mat{};
         auto image = std::make_unique<Image>();
         if (!capturer->read(frame)) {
             if (config.loop_play) {
                 if (capturer->set(cv::CAP_PROP_POS_FRAMES, 0) && capturer->read(frame)) {
                     last_read_time = Clock::now();
                 } else {
-                    return std::unexpected { "End of file reached and failed to "
-                                             "loop/reset." };
+                    return std::unexpected{
+                        "End of file reached and failed to "
+                        "loop/reset."};
                 }
             } else {
-                return std::unexpected { "End of file reached." };
+                return std::unexpected{"End of file reached."};
             }
         }
 
         if (frame.empty()) {
-            return std::unexpected { "Read frame is empty, possibly due to IO error." };
+            return std::unexpected{"Read frame is empty, possibly due to IO error."};
         }
         image->details().set_mat(frame);
         image->set_timestamp(last_read_time);
@@ -116,13 +120,19 @@ auto LocalVideo::wait_image() noexcept -> std::expected<std::unique_ptr<Image>, 
     return pimpl_->wait_image();
 }
 
-auto LocalVideo::connect() noexcept -> std::expected<void, std::string> { return pimpl_->connect(); }
+auto LocalVideo::connect() noexcept -> std::expected<void, std::string> {
+    return pimpl_->connect();
+}
 
-auto LocalVideo::connected() const noexcept -> bool { return pimpl_->connected(); }
+auto LocalVideo::connected() const noexcept -> bool {
+    return pimpl_->connected();
+}
 
-auto LocalVideo::disconnect() noexcept -> void { return pimpl_->disconnect(); }
+auto LocalVideo::disconnect() noexcept -> void {
+    return pimpl_->disconnect();
+}
 
-LocalVideo::LocalVideo() noexcept
-    : pimpl_ { std::make_unique<Impl>() } { }
+LocalVideo::LocalVideo() noexcept : pimpl_{std::make_unique<Impl>()} {
+}
 
 LocalVideo::~LocalVideo() noexcept = default;

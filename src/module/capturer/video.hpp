@@ -1,7 +1,9 @@
 #pragma once
-#include "utility/pimpl.hpp"
 #include <chrono>
 #include <opencv2/core/mat.hpp>
+#include <string>
+
+#include "utility/pimpl.hpp"
 
 namespace pingpong_tracker::module {
 
@@ -15,7 +17,7 @@ public:
     /// @throw std::runtime_error Read error, timeout, e.g
     auto read(std::chrono::milliseconds timeout) const -> cv::Mat;
 
-    auto set_framerate(double hz) noexcept;
+    auto set_framerate(double hz) noexcept -> void;
 };
 
-} // namespace pingpong_tracker::capturer
+}  // namespace pingpong_tracker::module

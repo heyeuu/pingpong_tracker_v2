@@ -2,35 +2,41 @@
 
 #include <chrono>
 #include <memory>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/videoio.hpp>
 #include <stdexcept>
 #include <string>
 #include <thread>
-
-#include <opencv2/core/mat.hpp>
-#include <opencv2/videoio.hpp>
 
 using namespace pingpong_tracker::module;
 
 struct VideoCapturer::Impl final {
     explicit Impl() noexcept = default;
 
-    explicit Impl(const std::string& path) { open(path); }
+    explicit Impl(const std::string& path) {
+        open(path);
+    }
 
     auto set_framerate(double hz) noexcept {
-        const auto milliseconds_count = static_cast<long>(1'000 / hz);
-        interval_duration_            = std::chrono::milliseconds { milliseconds_count };
+        if (hz > 0) {
+            const auto milliseconds_count = static_cast<long>(1'000 / hz);
+            interval_duration_            = std::chrono::milliseconds{milliseconds_count};
+        }
     }
 
     auto open(const std::string& path) -> void {
         capturer_ = std::make_unique<cv::VideoCapture>(path);
         if (!capturer_->isOpened())
-            throw std::runtime_error { "VideoCapturer: Can not open video" };
+            throw std::runtime_error{"VideoCapturer: Can not open video"};
     }
 
     auto read(std::chrono::milliseconds) const -> cv::Mat {
-        auto mat = cv::Mat {};
+        if (!capturer_) {
+            throw std::runtime_error{"VideoCapturer: capturer not initialized"};
+        }
+        auto mat = cv::Mat{};
         if (!capturer_->read(mat))
-            throw std::runtime_error { "VideoCapturer: Some errors happened while reading video" };
+            throw std::runtime_error{"VideoCapturer: Some errors happened while reading video"};
 
         std::this_thread::sleep_until(last_read_timestamp_ + interval_duration_);
 
@@ -41,16 +47,16 @@ struct VideoCapturer::Impl final {
     std::unique_ptr<cv::VideoCapture> capturer_;
 
     using clock = std::chrono::steady_clock;
-    mutable clock::time_point last_read_timestamp_ { clock::now() };
+    mutable clock::time_point last_read_timestamp_{clock::now()};
 
-    std::chrono::milliseconds interval_duration_ { 0 };
+    std::chrono::milliseconds interval_duration_{0};
 };
 
-VideoCapturer::VideoCapturer() noexcept
-    : pimpl_ { std::make_unique<Impl>() } { }
+VideoCapturer::VideoCapturer() noexcept : pimpl_{std::make_unique<Impl>()} {
+}
 
-VideoCapturer::VideoCapturer(const std::string& path)
-    : pimpl_ { std::make_unique<Impl>(path) } { }
+VideoCapturer::VideoCapturer(const std::string& path) : pimpl_{std::make_unique<Impl>(path)} {
+}
 
 VideoCapturer::~VideoCapturer() noexcept = default;
 
@@ -58,4 +64,6 @@ auto VideoCapturer::read(std::chrono::milliseconds timeout) const -> cv::Mat {
     return pimpl_->read(timeout);
 }
 
-auto VideoCapturer::set_framerate(double hz) noexcept { pimpl_->set_framerate(hz); }
+auto VideoCapturer::set_framerate(double hz) noexcept {
+    pimpl_->set_framerate(hz);
+}
