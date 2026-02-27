@@ -12,6 +12,9 @@ auto Hikcamera::wait_image() noexcept -> ImageResult {
     }
 
     auto image = std::make_unique<Image>();
+    if (captured->mat.empty()) {
+        return std::unexpected{"Hikcamera::wait_image got empty frame"};
+    }
     image->details().set_mat(captured->mat);
     image->set_timestamp(captured->timestamp);
 
