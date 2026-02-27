@@ -5,7 +5,7 @@
 using namespace pingpong_tracker::debug;
 
 namespace pipeline {
-constexpr auto make_rtpjepg = [](int w, int h, int hz, std::string_view host,
+constexpr auto make_rtpjpeg = [](int w, int h, int hz, std::string_view host,
                                  std::string_view port) {
     constexpr auto configuration = std::string_view{
         "appsrc "
@@ -30,8 +30,9 @@ constexpr auto make_rtph264 = [](int w, int h, int hz, std::string_view host,
     return std::format(configuration, w, h, hz, host, port);
 };
 }  // namespace pipeline
+
 namespace sdp {
-constexpr auto make_rtpjepg = [](std::string_view ip, std::string_view port) {
+constexpr auto make_rtpjpeg = [](std::string_view ip, std::string_view port) {
     constexpr auto configuration = std::string_view{
         "v=0\n"
         "m=video {} RTP/AVP 26\n"
@@ -66,8 +67,8 @@ auto StreamContext::check_support() noexcept -> std::expected<void, std::string_
 
 auto StreamContext::open() noexcept -> std::expected<void, std::string> {
     switch (stream_type_) {
-        case StreamType::RTP_JEPG:
-            pipeline_ = pipeline::make_rtpjepg(video_format_.w, video_format_.h, video_format_.hz,
+        case StreamType::RTP_JPEG:
+            pipeline_ = pipeline::make_rtpjpeg(video_format_.w, video_format_.h, video_format_.hz,
                                                stream_target_.host, stream_target_.port);
             break;
         case StreamType::RTP_H264:
@@ -106,8 +107,8 @@ auto StreamContext::session_description_protocol(const std::string_view& local_i
         return std::unexpected{"Pipeline is not opened"};
 
     switch (stream_type_) {
-        case StreamType::RTP_JEPG:
-            return sdp::make_rtpjepg(local_ip, stream_target_.port);
+        case StreamType::RTP_JPEG:
+            return sdp::make_rtpjpeg(local_ip, stream_target_.port);
         case StreamType::RTP_H264:
             return sdp::make_rtph264(local_ip, stream_target_.port);
         case StreamType::NONE:

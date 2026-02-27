@@ -19,10 +19,10 @@ struct LocalVideo {
 
 private:
     struct ConfigDetail {
-        std::string location;
-        double frame_rate;
-        bool loop_play;
-        bool allow_skipping;
+        std::string location{};
+        double frame_rate{60.};
+        bool loop_play{true};
+        bool allow_skipping{false};
     };
 
 public:

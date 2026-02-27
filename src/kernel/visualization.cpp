@@ -12,7 +12,7 @@ using namespace pingpong_tracker::kernel;
 using namespace pingpong_tracker::util;
 
 constexpr std::array kVideoTypes{
-    "RTP_JEPG",
+    "RTP_JPEG",
     "RTP_H264",
 };
 
@@ -26,7 +26,7 @@ struct Visualization::Impl {
         std::string monitor_host = "localhost";
         std::string monitor_port = "5000";
 
-        std::string stream_type = "RTP_JEPG";
+        std::string stream_type = "RTP_JPEG";
 
         static constexpr auto kMetas = std::tuple{
             "framerate",    &Config::framerate,    "monitor_host", &Config::monitor_host,
@@ -56,7 +56,7 @@ struct Visualization::Impl {
         session_config.format.hz   = static_cast<int>(config.framerate);
 
         if (config.stream_type == kVideoTypes[0]) {
-            session_config.type = debug::StreamType::RTP_JEPG;
+            session_config.type = debug::StreamType::RTP_JPEG;
         } else if (config.stream_type == kVideoTypes[1]) {
             session_config.type = debug::StreamType::RTP_H264;
         } else {

@@ -28,8 +28,16 @@ struct LocalVideo::Impl {
     };
 
     auto configure(Config const& _config) -> std::expected<void, std::string> {
-        if (_config.location.empty() || !std::filesystem::exists(_config.location)) {
-            return std::unexpected{"Local video is not found or location is empty"};
+        if (_config.location.empty()) {
+            return std::unexpected{"Local video location is empty"};
+        }
+        try {
+            if (!std::filesystem::exists(_config.location)) {
+                return std::unexpected{"Local video not found: " + _config.location};
+            }
+        } catch (const std::filesystem::filesystem_error& e) {
+            return std::unexpected{"Error checking file existence for '" + _config.location
+                                   + "': " + e.what()};
         }
 
         config = _config;

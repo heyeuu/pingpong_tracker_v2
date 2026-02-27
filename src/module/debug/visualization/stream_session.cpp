@@ -96,8 +96,9 @@ private:
     }
     static auto get_same_subnet_ipv4(std::string_view target_ip_str)
         -> std::expected<std::string, std::string> {
-        auto target_addr = in_addr{};
-        if (inet_pton(AF_INET, target_ip_str.data(), &target_addr) != 1) {
+        auto target_addr     = in_addr{};
+        const auto target_ip = std::string(target_ip_str);
+        if (inet_pton(AF_INET, target_ip.c_str(), &target_addr) != 1) {
             return std::unexpected(std::format("Invalid target IP address: {}", target_ip_str));
         }
 

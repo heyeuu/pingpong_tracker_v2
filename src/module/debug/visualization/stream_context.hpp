@@ -13,7 +13,7 @@ public:
 
     enum class StreamType : uint8_t {
         NONE,
-        RTP_JEPG,
+        RTP_JPEG,
         RTP_H264,
     };
     struct VideoFormat {
