@@ -3,12 +3,16 @@
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <future>
-#include <iostream>
+#include <limits>
 #include <memory>
+#include <numbers>
+#include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <optional>
 #include <vector>
@@ -21,7 +25,49 @@ using pingpong_tracker::Image;
 using pingpong_tracker::Point2D;
 using pingpong_tracker::identifier::OpenVinoNet;
 
-namespace {}  // namespace
+namespace {
+struct ExpectedDetection {
+    Point2D center;
+    double radius;
+    double min_confidence;
+};
+
+const auto kExpectedDetections = std::vector<ExpectedDetection>{{{596.0, 343.0}, 20, 0.85}};
+constexpr auto kIoUThreshold   = 0.5;
+
+template <typename T>
+auto ComputeCircleIoU(const Point2D& c1, double r1, const T& c2, double r2) -> double {
+    const auto d = std::hypot(c1.x - c2.x, c1.y - c2.y);
+
+    if (d >= r1 + r2) {
+        return 0.0;
+    }
+
+    if (d <= std::abs(r1 - r2)) {
+        const auto r_min = std::min(r1, r2);
+        const auto r_max = std::max(r1, r2);
+        if (r_max <= std::numeric_limits<double>::epsilon()) {
+            return 0.0;
+        }
+        return (r_min * r_min) / (r_max * r_max);
+    }
+
+    const auto r1_sq = r1 * r1;
+    const auto r2_sq = r2 * r2;
+
+    const auto angle1 =
+        2.0 * std::acos(std::clamp((r1_sq + d * d - r2_sq) / (2.0 * r1 * d), -1.0, 1.0));
+    const auto angle2 =
+        2.0 * std::acos(std::clamp((r2_sq + d * d - r1_sq) / (2.0 * r2 * d), -1.0, 1.0));
+
+    const auto intersection =
+        0.5 * r1_sq * (angle1 - std::sin(angle1)) + 0.5 * r2_sq * (angle2 - std::sin(angle2));
+    const auto union_area = std::numbers::pi * (r1_sq + r2_sq) - intersection;
+
+    return intersection / union_area;
+}
+
+}  // namespace
 
 class OpenVinoNetTest : public ::testing::Test {
 protected:
@@ -39,12 +85,12 @@ protected:
         // Setup a valid base config structure
         config_["model_location"]  = (models_root / "yolov8.onnx").string();
         config_["infer_device"]    = "CPU";
-        config_["input_rows"]      = 640;
-        config_["input_cols"]      = 640;
-        config_["score_threshold"] = 0.01;
+        config_["input_rows"]      = 800;
+        config_["input_cols"]      = 800;
+        config_["score_threshold"] = 0.5;
         config_["nms_threshold"]   = 0.45;
 
-        test_image_path_ = (assets_root / "jump.png").string();
+        test_image_path_ = (assets_root / "pingpong.png").string();
     }
 
     [[nodiscard]] bool HasValidModel() const {
@@ -63,6 +109,43 @@ protected:
         auto img = Image{};
         img.details().set_mat(cv_img);
         return img;
+    }
+
+    static void ValidateDetections(const std::vector<Ball2D>& actual,
+                                   const std::vector<ExpectedDetection>& expected_list) {
+        EXPECT_FALSE(actual.empty()) << "Inference returned no detections!";
+
+        std::vector<bool> matched(actual.size(), false);
+
+        for (const auto& expected : expected_list) {
+            auto max_iou  = 0.0;
+            auto best_idx = -1;
+
+            for (size_t i = 0; i < actual.size(); ++i) {
+                if (matched[i])
+                    continue;
+
+                const auto& det = actual[i];
+                if (det.confidence < expected.min_confidence)
+                    continue;
+
+                const auto iou =
+                    ComputeCircleIoU(expected.center, expected.radius, det.center, det.radius);
+
+                if (iou > max_iou) {
+                    max_iou  = iou;
+                    best_idx = static_cast<int>(i);
+                }
+            }
+
+            EXPECT_GE(max_iou, kIoUThreshold)
+                << "Best match IoU (" << max_iou << ") is too low for target at "
+                << expected.center.x << "," << expected.center.y;
+
+            if (best_idx != -1) {
+                matched[best_idx] = true;
+            }
+        }
     }
 
     OpenVinoNet net_;
@@ -102,8 +185,6 @@ TEST_F(OpenVinoNetTest, ConfigureSuccessWithValidModelPath) {
     EXPECT_TRUE(net_.configure(config_).has_value());
 }
 
-// TODO: 当前模型权重对 jump.png 中的高速运动模糊目标识别率极低，目前仅测试推理管线是否能正常打通，
-// 待模型经过 Data Augmentation 重新训练后，再恢复坐标与 IoU 的精度断言。
 TEST_F(OpenVinoNetTest, SyncInferSuccessWithValidImage) {
     if (!HasValidModel()) {
         GTEST_SKIP() << "Model file missing";
@@ -122,15 +203,9 @@ TEST_F(OpenVinoNetTest, SyncInferSuccessWithValidImage) {
     auto result = net_.sync_infer(*image_opt);
     ASSERT_TRUE(result.has_value());
 
-    std::cout << "[INFO] Inference completed, detections: " << result.value().size() << std::endl;
-    for (const auto& ball : result.value()) {
-        std::cout << "  - Ball: center=(" << ball.center.x << ", " << ball.center.y
-                  << "), radius=" << ball.radius << ", confidence=" << ball.confidence << std::endl;
-    }
+    ValidateDetections(result.value(), kExpectedDetections);
 }
 
-// TODO: 当前模型权重对 jump.png 中的高速运动模糊目标识别率极低，目前仅测试推理管线是否能正常打通，
-// 待模型经过 Data Augmentation 重新训练后，再恢复坐标与 IoU 的精度断言。
 TEST_F(OpenVinoNetTest, AsyncInferSuccessWithValidImage) {
     if (!HasValidModel()) {
         GTEST_SKIP() << "Model file missing";
@@ -158,13 +233,7 @@ TEST_F(OpenVinoNetTest, AsyncInferSuccessWithValidImage) {
 
     auto result = future.get();
     if (result.has_value()) {
-        std::cout << "[INFO] Inference completed, detections: " << result.value().size()
-                  << std::endl;
-        for (const auto& ball : result.value()) {
-            std::cout << "  - Ball: center=(" << ball.center.x << ", " << ball.center.y
-                      << "), radius=" << ball.radius << ", confidence=" << ball.confidence
-                      << std::endl;
-        }
+        ValidateDetections(result.value(), kExpectedDetections);
     } else {
         ADD_FAILURE() << "Async inference failed: " << result.error();
     }
