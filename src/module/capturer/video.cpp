@@ -17,7 +17,7 @@ struct VideoCapturer::Impl final {
         open(path);
     }
 
-    auto set_framerate(double hz) noexcept {
+    auto set_framerate(double hz) noexcept -> void {
         if (hz > 0) {
             const auto milliseconds_count = static_cast<long>(1'000 / hz);
             interval_duration_            = std::chrono::milliseconds{milliseconds_count};
@@ -64,6 +64,6 @@ auto VideoCapturer::read(std::chrono::milliseconds timeout) const -> cv::Mat {
     return pimpl_->read(timeout);
 }
 
-auto VideoCapturer::set_framerate(double hz) noexcept {
+auto VideoCapturer::set_framerate(double hz) noexcept -> void {
     pimpl_->set_framerate(hz);
 }
