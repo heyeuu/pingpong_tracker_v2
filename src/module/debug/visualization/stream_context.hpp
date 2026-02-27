@@ -28,10 +28,11 @@ public:
 
 public:
     explicit StreamContext(StreamType stream_type, const VideoFormat& video_format,
-        StreamTarget stream_target) noexcept
-        : video_format_ { video_format }
-        , stream_type_ { stream_type }
-        , stream_target_ { std::move(stream_target) } { }
+                           StreamTarget stream_target) noexcept
+        : video_format_{video_format},
+          stream_type_{stream_type},
+          stream_target_{std::move(stream_target)} {
+    }
 
     static auto check_support() noexcept -> std::expected<void, std::string_view>;
 
@@ -44,13 +45,21 @@ public:
 
     auto write(FrameRef frame) const noexcept -> void;
 
-    auto video_format() const noexcept { return video_format_; }
+    auto video_format() const noexcept {
+        return video_format_;
+    }
 
-    auto stream_type() const noexcept { return stream_type_; }
+    auto stream_type() const noexcept {
+        return stream_type_;
+    }
 
-    auto stream_target() const noexcept { return stream_target_; }
+    auto stream_target() const noexcept {
+        return stream_target_;
+    }
 
-    auto pipeline() const noexcept { return pipeline_; }
+    auto pipeline() const noexcept {
+        return pipeline_;
+    }
 
 private:
     VideoFormat video_format_;
@@ -61,4 +70,4 @@ private:
     std::string pipeline_;
 };
 
-}
+}  // namespace pingpong_tracker::debug

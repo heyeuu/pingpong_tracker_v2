@@ -1,6 +1,7 @@
 #pragma once
-#include "stream_context.hpp"
 #include <functional>
+
+#include "stream_context.hpp"
 
 namespace pingpong_tracker::debug {
 
@@ -41,4 +42,4 @@ private:
     std::unique_ptr<Impl> pimpl;
 };
 
-}
+}  // namespace pingpong_tracker::debug
