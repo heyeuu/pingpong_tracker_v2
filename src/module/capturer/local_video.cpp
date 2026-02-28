@@ -50,6 +50,10 @@ struct LocalVideo::Impl {
             return std::unexpected{"Failed to construct VideoCapture due to an unknown error."};
         }
 
+        if (!capturer->isOpened()) {
+            return std::unexpected{"Failed to open local video: " + config.location};
+        }
+
         double source_fps = capturer->get(cv::CAP_PROP_FPS);
         double target_fps = source_fps > 0 ? source_fps : 30.0;
 

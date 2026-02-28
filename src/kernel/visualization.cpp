@@ -76,6 +76,10 @@ struct Visualization::Impl {
             return false;
 
         const auto& mat = image.details().get_mat();
+        if (mat.empty()) {
+            spdlog::error("Visualization input frame is empty");
+            return false;
+        }
 
         if (!size_determined) {
             session_config.format.w = mat.cols;

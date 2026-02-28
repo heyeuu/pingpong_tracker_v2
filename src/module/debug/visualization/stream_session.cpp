@@ -35,15 +35,25 @@ public:
     }
 
     auto initialize(StreamType type, const StreamTarget& target, const VideoFormat& format) noexcept
-        -> void {
+        -> std::expected<void, std::string> {
+        if (thread) {
+            thread->request_stop();
+            if (thread->joinable()) {
+                thread->join();
+            }
+            thread.reset();
+        }
+
         context  = std::make_unique<StreamContext>(type, format, target);
         notifier = [](const std::string&) {};
-        thread   = std::make_unique<std::jthread>(
-            [this](const std::stop_token& token) { streaming_thread(token); });
-    }
 
-    auto open() noexcept -> std::expected<void, std::string> {
-        return context->open();
+        if (auto result = context->open(); !result) {
+            return std::unexpected{result.error()};
+        }
+
+        thread = std::make_unique<std::jthread>(
+            [this](const std::stop_token& token) { streaming_thread(token); });
+        return {};
     }
 
     auto opened() const noexcept {
@@ -51,6 +61,7 @@ public:
     }
 
     auto push_frame(FrameRef frame) noexcept -> bool {
+        // Safe: cv::Mat refcount ensures data lifetime across threads
         return buffer.push(frame);
     }
 
@@ -65,7 +76,9 @@ private:
         while (!token.stop_requested()) {
             auto current_frame = cv::Mat{};
             if (buffer.pop(current_frame)) {
-                context->write(current_frame);
+                if (context) {
+                    context->write(current_frame);
+                }
             }
             std::this_thread::yield();
         }
@@ -85,7 +98,7 @@ private:
 
         std::vector<NetworkInfo> network_info_list;
         for (ifaddrs* if_ptr = if_list; if_ptr; if_ptr = if_ptr->ifa_next) {
-            if (if_ptr->ifa_addr && if_ptr->ifa_addr->sa_family == AF_INET) {
+            if (if_ptr->ifa_addr && if_ptr->ifa_netmask && if_ptr->ifa_addr->sa_family == AF_INET) {
                 const auto* sa_in = reinterpret_cast<sockaddr_in*>(if_ptr->ifa_addr);
                 const auto* sn_in = reinterpret_cast<sockaddr_in*>(if_ptr->ifa_netmask);
                 network_info_list.push_back({sa_in->sin_addr.s_addr, sn_in->sin_addr.s_addr});
@@ -143,8 +156,7 @@ auto StreamSession::set_notifier(std::function<void(const std::string&)> f) noex
     pimpl->set_notifier(std::move(f));
 }
 auto StreamSession::open(const Config& config) noexcept -> std::expected<void, std::string> {
-    pimpl->initialize(config.type, config.target, config.format);
-    return pimpl->open();
+    return pimpl->initialize(config.type, config.target, config.format);
 }
 auto StreamSession::opened() const noexcept -> bool {
     return pimpl->opened();
