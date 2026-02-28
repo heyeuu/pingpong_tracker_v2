@@ -4,6 +4,7 @@
 #include <ifaddrs.h>
 #include <netinet/in.h>
 
+#include <atomic>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <functional>
 #include <memory>
@@ -44,8 +45,9 @@ public:
             thread.reset();
         }
 
-        context  = std::make_unique<StreamContext>(type, format, target);
-        notifier = [](const std::string&) {};
+        buffer.consume_all([](const cv::Mat&) {});
+
+        context = std::make_unique<StreamContext>(type, format, target);
 
         if (auto result = context->open(); !result) {
             return std::unexpected{result.error()};
@@ -66,12 +68,19 @@ public:
     }
 
     void set_notifier(std::function<void(const std::string&)> f) {
-        notifier = std::move(f);
+        notifier.store(std::make_shared<std::function<void(const std::string&)>>(std::move(f)));
     }
 
 private:
     auto streaming_thread(const std::stop_token& token) noexcept -> void {
-        notifier("Streaming thread starts");
+        auto notify = [this](const std::string& msg) {
+            auto ptr = notifier.load();
+            if (ptr && *ptr) {
+                (*ptr)(msg);
+            }
+        };
+
+        notify("Streaming thread starts");
 
         while (!token.stop_requested()) {
             auto current_frame = cv::Mat{};
@@ -82,7 +91,7 @@ private:
             }
             std::this_thread::yield();
         }
-        notifier("Streaming thread stops");
+        notify("Streaming thread stops");
     }
 
     struct NetworkInfo {
@@ -139,12 +148,14 @@ private:
 
 private:
     std::unique_ptr<StreamContext> context;
-    std::unique_ptr<std::jthread> thread;
 
     static constexpr auto buffer_capacity = std::size_t{100};
     boost::lockfree::spsc_queue<cv::Mat, boost::lockfree::capacity<buffer_capacity>> buffer;
 
-    std::function<void(const std::string&)> notifier;
+    std::atomic<std::shared_ptr<std::function<void(const std::string&)>>> notifier{
+        std::make_shared<std::function<void(const std::string&)>>([](const std::string&) {})};
+
+    std::unique_ptr<std::jthread> thread;
 };
 
 StreamSession::StreamSession() noexcept : pimpl{std::make_unique<Impl>()} {
