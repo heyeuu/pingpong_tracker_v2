@@ -1,6 +1,8 @@
 #pragma once
+#include <concepts>
 #include <eigen3/Eigen/Cholesky>
 #include <eigen3/Eigen/Geometry>
+#include <type_traits>
 
 namespace pingpong_tracker::util {
 
@@ -102,7 +104,7 @@ public:
     template <typename MeasFunc, typename JacobianFunc, typename AddOp = decltype(DefaultAdd),
               typename SubOp = decltype(DefaultSubtract)>
     auto update(ZVec const& z, MeasFunc&& h, JacobianFunc&& get_H, RMat const& R, AddOp&& x_add_op,
-                SubOp&& z_sub_op) -> void {
+                SubOp&& z_sub_op) -> bool {
         static_assert(ObservationModel<MeasFunc, StateDim, ObsDim>,
                       "\n[EKF Error] 观测函数 h(x) 不符合要求！\n"
                       "预期签名: Eigen::Matrix<double, ObsDim, 1> h(const Eigen::Matrix<double, "
@@ -129,7 +131,11 @@ public:
         // --- 3. 计算最优卡尔曼增益 (Optimal Kalman Gain) ---
         // K_k = P_{k|k-1} * H_k^T * S_k^-1
         // 使用高效的 LDLT 分解求解线性方程组 S*K^T = H*P
-        auto K = P_ * H.transpose() * S.ldlt().solve(RMat::Identity());
+        auto ldlt = S.ldlt();
+        if (ldlt.info() != Eigen::Success || !ldlt.isPositive()) {
+            return false;
+        }
+        auto K = P_ * H.transpose() * ldlt.solve(RMat::Identity());
 
         // --- 4. 状态后验更新 (State Update) ---
         // x_{k|k} = x_{k|k-1} + K_k * y_k
@@ -144,6 +150,7 @@ public:
         P_next += (K * R * K.transpose()).eval();
         // 强制对称化
         P_ = 0.5 * (P_next + P_next.transpose());
+        return true;
     }
 
 private:
