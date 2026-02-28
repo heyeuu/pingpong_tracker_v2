@@ -117,6 +117,8 @@ public:
 
         static_assert(std::is_invocable_r_v<XVec, AddOp, XVec, XVec>,
                       "x_add_op 必须接受两个 XVec 并返回 XVec");
+        static_assert(std::is_invocable_r_v<ZVec, SubOp, ZVec, ZVec>,
+                      "z_sub_op 必须接受两个 ZVec 并返回 ZVec");
 
         // H = dh/dx | x=x_pre
         auto H = get_H(x);
