@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <future>
+#include <limits>
 #include <memory>
 #include <numbers>
 #include <opencv2/core.hpp>
@@ -25,6 +26,14 @@ using pingpong_tracker::Point2D;
 using pingpong_tracker::identifier::OpenVinoNet;
 
 namespace {
+struct ExpectedDetection {
+    Point2D center;
+    double radius;
+    double min_confidence;
+};
+
+const auto kExpectedDetections = std::vector<ExpectedDetection>{{{596.0, 343.0}, 20, 0.85}};
+constexpr auto kIoUThreshold   = 0.5;
 
 template <typename T>
 auto ComputeCircleIoU(const Point2D& c1, double r1, const T& c2, double r2) -> double {
@@ -37,6 +46,9 @@ auto ComputeCircleIoU(const Point2D& c1, double r1, const T& c2, double r2) -> d
     if (d <= std::abs(r1 - r2)) {
         const auto r_min = std::min(r1, r2);
         const auto r_max = std::max(r1, r2);
+        if (r_max <= std::numeric_limits<double>::epsilon()) {
+            return 0.0;
+        }
         return (r_min * r_min) / (r_max * r_max);
     }
 
@@ -54,14 +66,6 @@ auto ComputeCircleIoU(const Point2D& c1, double r1, const T& c2, double r2) -> d
 
     return intersection / union_area;
 }
-
-struct ExpectedDetection {
-    Point2D center;
-    double radius;
-    double min_confidence;
-};
-
-const auto kExpectedDetections = std::vector<ExpectedDetection>{{{184.0, 349.0}, 6.0, 0.9}};
 
 }  // namespace
 
@@ -81,12 +85,12 @@ protected:
         // Setup a valid base config structure
         config_["model_location"]  = (models_root / "yolov8.onnx").string();
         config_["infer_device"]    = "CPU";
-        config_["input_rows"]      = 640;
-        config_["input_cols"]      = 640;
+        config_["input_rows"]      = 800;
+        config_["input_cols"]      = 800;
         config_["score_threshold"] = 0.5;
         config_["nms_threshold"]   = 0.45;
 
-        test_image_path_ = (assets_root / "jump.png").string();
+        test_image_path_ = (assets_root / "pingpong.png").string();
     }
 
     [[nodiscard]] bool HasValidModel() const {
@@ -111,21 +115,36 @@ protected:
                                    const std::vector<ExpectedDetection>& expected_list) {
         EXPECT_FALSE(actual.empty()) << "Inference returned no detections!";
 
-        for (const auto& expected : expected_list) {
-            auto max_iou = 0.0;
+        std::vector<bool> matched(actual.size(), false);
 
-            for (const auto& det : actual) {
+        for (const auto& expected : expected_list) {
+            auto max_iou  = 0.0;
+            auto best_idx = -1;
+
+            for (size_t i = 0; i < actual.size(); ++i) {
+                if (matched[i])
+                    continue;
+
+                const auto& det = actual[i];
                 if (det.confidence < expected.min_confidence)
                     continue;
 
                 const auto iou =
                     ComputeCircleIoU(expected.center, expected.radius, det.center, det.radius);
-                max_iou = std::max(max_iou, iou);
+
+                if (iou > max_iou) {
+                    max_iou  = iou;
+                    best_idx = static_cast<int>(i);
+                }
             }
 
-            EXPECT_GE(max_iou, 0.5)
+            EXPECT_GE(max_iou, kIoUThreshold)
                 << "Best match IoU (" << max_iou << ") is too low for target at "
                 << expected.center.x << "," << expected.center.y;
+
+            if (best_idx != -1) {
+                matched[best_idx] = true;
+            }
         }
     }
 

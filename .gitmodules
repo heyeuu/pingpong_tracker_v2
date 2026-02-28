@@ -1,0 +1,3 @@
+[submodule "third_party/hikcamera"]
+	path = third_party/hikcamera
+	url = https://github.com/heyeuu/hikcamera.git

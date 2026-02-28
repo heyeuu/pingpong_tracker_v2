@@ -64,6 +64,8 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
     using Result   = std::expected<std::vector<Ball2D>, std::string>;
     using Callback = std::function<void(Result)>;
 
+    static constexpr int kPaddingValue = 114;
+
     ov::CompiledModel openvino_model;
     ov::Core openvino_core;
 
@@ -134,7 +136,8 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
 
         input.preprocess()
             .convert_element_type(ov::element::f32)
-            .convert_color(ov::preprocess::ColorFormat::RGB);
+            .convert_color(ov::preprocess::ColorFormat::RGB)
+            .scale(255.0f);
 
         input.model().set_layout(ModelLayout::layout());
 
@@ -170,12 +173,10 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
         auto resized_mat = cv::Mat{};
         cv::resize(origin_mat, resized_mat, {new_w, new_h});
 
-        const auto pad_w      = static_cast<int>(input_w) - new_w;
-        const auto pad_h      = static_cast<int>(input_h) - new_h;
-        const auto pad_top    = pad_h / 2;
-        const auto pad_bottom = pad_h - pad_top;
-        const auto pad_left   = pad_w / 2;
-        const auto pad_right  = pad_w - pad_left;
+        const auto pad_w    = static_cast<int>(input_w) - new_w;
+        const auto pad_h    = static_cast<int>(input_h) - new_h;
+        const auto pad_top  = pad_h / 2;
+        const auto pad_left = pad_w / 2;
 
         const auto dimensions = Dimensions{
             .w = static_cast<dimension_type>(config.input_cols),
@@ -186,8 +187,8 @@ struct OpenVinoNet::Impl : std::enable_shared_from_this<Impl> {
         auto tensor_mat =
             cv::Mat{config.input_rows, config.input_cols, CV_8UC3, input_tensor.data()};
 
-        cv::copyMakeBorder(resized_mat, tensor_mat, pad_top, pad_bottom, pad_left, pad_right,
-                           cv::BORDER_CONSTANT, cv::Scalar{114, 114, 114});
+        tensor_mat.setTo(cv::Scalar{kPaddingValue, kPaddingValue, kPaddingValue});
+        resized_mat.copyTo(tensor_mat(cv::Rect{pad_left, pad_top, new_w, new_h}));
 
         auto request = openvino_model.create_infer_request();
         request.set_input_tensor(input_tensor);
