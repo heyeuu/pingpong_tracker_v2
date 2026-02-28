@@ -44,4 +44,4 @@ visualization:
   framerate: 60
   monitor_host: "127.0.0.1"
   monitor_port: "5000"
-  stream_type: "RTP_JEPG"
+  stream_type: "RTP_JPEG"
