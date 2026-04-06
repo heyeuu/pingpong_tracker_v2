@@ -80,6 +80,15 @@ target_link_libraries(${PROJECT_NAME}_runtime PRIVATE
     ${PROJECT_NAME}_kernel
 )
 
+# --- 运行时目标: Predictor Replay ---
+add_executable(
+    ${PROJECT_NAME}_predictor_replay
+    ${PROJECT_SOURCE_DIR}/src/predictor_replay.cpp
+)
+target_link_libraries(${PROJECT_NAME}_predictor_replay PRIVATE
+    ${PROJECT_NAME}_module
+)
+
 # --- 测试构建 ---
 option(BUILD_TESTING "Build the testing tree." ON)
 if(BUILD_TESTING)

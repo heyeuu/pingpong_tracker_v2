@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "module/debug/framerate.hpp"
-#include "utility/times_limit.hpp"
+#include "utility/time/times_limit.hpp"
 
 namespace pingpong_tracker::util {
 

@@ -158,9 +158,14 @@ public:
         x      = x_add_op(x, K * y);
 
         // 7. 更新协方差
-        P_ = P_ - K * S * K.transpose();
+        P_ = (P_ - K * S * K.transpose()).eval();
+        P_ = 0.5 * (P_ + P_.transpose());
 
         return true;
+    }
+
+    [[nodiscard]] auto covariance() const -> PMat const& {
+        return P_;
     }
 
 private:

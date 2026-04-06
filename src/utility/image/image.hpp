@@ -1,5 +1,5 @@
 #pragma once
-#include "utility/clock.hpp"
+#include "utility/time/clock.hpp"
 #include "utility/pimpl.hpp"
 
 namespace pingpong_tracker {
