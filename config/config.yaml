@@ -23,7 +23,7 @@ capturer:
     fixed_framerate: true
   local_video:
     # 替换为你具体的路径
-    location: "/workspaces/alliance/test_videos/pingpong_fast.mp4"
+    location: "/workspaces/alliance/test_videos/pingpong_v3.mp4"
     # double 帧率
     frame_rate: 60
     # bool 是否循环播放
@@ -46,11 +46,46 @@ visualization:
   monitor_port: "5000"
   stream_type: "RTP_JPEG"
 
+reconstruction:
+  mono:
+    fx: 1000.0
+    fy: 1000.0
+    cx: 540.0
+    cy: 960.0
+    distortion_coeffs: [0.0, 0.0, 0.0, 0.0, 0.0]
+    ball_radius_m: 0.02
+    table_height_m: 0.0
+    min_confidence: 0.40
+    min_radius_px: 2.0
+    max_radius_px: 200.0
+    min_depth_m: 0.2
+    max_depth_m: 8.0
+    expected_radius_px: 15.0
+    radius_tolerance_px: 5.0
+    image_width_px: 1080
+    image_height_px: 1920
+    edge_margin_px: 30.0
+    rotation_wc:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    translation_wc: [0.0, 0.0, 0.0]
+
 predictor:
   # imm_ukf / imm / ukf
-  filter_type: "imm_ukf"
+  filter_type: "ukf"
   # 若测量中断超过该时长，滤波器重置（单位: 秒）
   reset_interval_seconds: 1.0
+  # 观测门控：新息 Mahalanobis 距离超过 sigma 倍的观测将被拒绝
+  observation_gate:
+    enabled: true
+    sigma: 3.0
   ukf:
     alpha: 0.1
     beta: 2.0
@@ -58,7 +93,7 @@ predictor:
     # [x, y, z, vx, vy, vz, wx, wy, wz]
     process_noise_std: [0.01, 0.01, 0.01, 0.10, 0.10, 0.10, 5.0, 5.0, 5.0]
     # [x, y, z]
-    measurement_noise_std: [0.005, 0.005, 0.005]
+    measurement_noise_std: [0.03, 0.03, 0.15]
     # [x, y, z, vx, vy, vz, wx, wy, wz]
     initial_covariance: [0.01, 0.01, 0.01, 1.0, 1.0, 1.0, 100.0, 100.0, 100.0]
   imm:

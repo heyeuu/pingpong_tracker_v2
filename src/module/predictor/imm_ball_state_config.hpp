@@ -20,12 +20,18 @@ enum class PredictorFilterType {
 
 using ConfiguredPredictor = std::variant<BallState, ImmBallState>;
 
+struct ObservationGateConfig {
+    bool enabled = true;
+    double sigma = 3.0;
+};
+
 struct PredictorConfig {
     PredictorFilterType filter_type = PredictorFilterType::ImmUkf;
     UKFParameters ukf{};
     BallModelParameters ball_model{};
     ImmBallState::ImmParameters imm{};
     std::chrono::duration<double> reset_interval{1.0};
+    ObservationGateConfig observation_gate{};
 };
 
 auto load_predictor_config(const YAML::Node& root) -> std::expected<PredictorConfig, std::string>;

@@ -317,6 +317,25 @@ auto load_predictor_config(const YAML::Node& root)
     config.reset_interval = std::chrono::duration<double>{reset_interval_seconds};
     config.reset_interval = std::max(config.reset_interval, std::chrono::duration<double>::zero());
 
+    const auto gate_node = predictor_node["observation_gate"];
+    if (gate_node && !gate_node.IsNull()) {
+        if (!gate_node.IsMap()) {
+            return std::unexpected{"'predictor.observation_gate' must be a map"};
+        }
+        if (auto ret =
+                read_optional_scalar(gate_node, "enabled", config.observation_gate.enabled);
+            !ret) {
+            return std::unexpected{ret.error()};
+        }
+        if (auto ret = read_optional_scalar(gate_node, "sigma", config.observation_gate.sigma);
+            !ret) {
+            return std::unexpected{ret.error()};
+        }
+        if (config.observation_gate.sigma <= 0.0) {
+            return std::unexpected{"'predictor.observation_gate.sigma' must be positive"};
+        }
+    }
+
     const auto ukf_node = predictor_node["ukf"];
     if (ukf_node && !ukf_node.IsNull()) {
         if (!ukf_node.IsMap()) {

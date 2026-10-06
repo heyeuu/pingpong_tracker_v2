@@ -59,3 +59,12 @@ target_link_libraries(replay_evaluation_test PRIVATE
     GTest::gtest_main
 )
 gtest_discover_tests(replay_evaluation_test)
+
+# Mono Reconstructor Test
+add_executable(mono_reconstructor_test mono_reconstructor_test.cpp)
+target_include_directories(mono_reconstructor_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(mono_reconstructor_test PRIVATE
+    ${PROJECT_NAME}_module
+    GTest::gtest_main
+)
+gtest_discover_tests(mono_reconstructor_test)
